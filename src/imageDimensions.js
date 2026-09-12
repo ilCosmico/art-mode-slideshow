@@ -59,9 +59,4 @@ function getShapeBand(ratio) {
   return 'panoramic';
 }
 
-function matchesShapeFilters(buffer, shapeFilters) {
-  const { width, height } = getImageDimensions(buffer);
-  return shapeFilters.includes(getShapeBand(width / height));
-}
-
-module.exports = { getImageDimensions, getShapeBand, matchesShapeFilters };
+module.exports = { getImageDimensions, getShapeBand };

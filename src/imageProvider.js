@@ -62,7 +62,7 @@ async function getNextArtwork() {
     }
   }
 
-  const fallbackEntry = await cacheIndex.getRandomEntry();
+  const fallbackEntry = await cacheIndex.getRandomEntry(settings.shapeFilters);
   if (!fallbackEntry) throw lastError;
   const response = toResponse(fallbackEntry);
   statusLog.recordSuccess({ source: response.source, title: response.title, cached: true });
@@ -94,7 +94,9 @@ async function cacheArtwork(artwork, shapeFilters) {
   // physical measurement, a thumbnail size) can disagree with the real
   // photographed image, so decide on the actual downloaded pixels and
   // reject before anything touches disk or the cache index.
-  if (!imageDimensions.matchesShapeFilters(buffer, shapeFilters)) {
+  const { width, height } = imageDimensions.getImageDimensions(buffer);
+  const shapeBand = imageDimensions.getShapeBand(width / height);
+  if (!shapeFilters.includes(shapeBand)) {
     throw new Error(`downloaded image "${artwork.id}" doesn't match shapeFilters [${shapeFilters}]`);
   }
 
@@ -108,6 +110,7 @@ async function cacheArtwork(artwork, shapeFilters) {
     artist: artwork.artist,
     source: artwork.source,
     sourceUrl: artwork.sourceUrl,
+    shapeBand,
     cachedAt: new Date().toISOString(),
   };
   index[artwork.id] = entry;
