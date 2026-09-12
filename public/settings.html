@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Art Mode Slideshow - Settings</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 1.5em;
+      max-width: 32em;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #f4f4f4;
+      color: #222;
+    }
+    h1 { font-size: 1.3rem; }
+    fieldset {
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      margin-bottom: 1em;
+      padding: 0.8em 1em;
+    }
+    legend { font-weight: 600; padding: 0 0.3em; }
+    label { display: block; margin: 0.6em 0 0.2em; font-size: 0.9rem; }
+    input[type="text"], input[type="number"], select {
+      width: 100%;
+      box-sizing: border-box;
+      padding: 0.4em;
+      font-size: 1rem;
+    }
+    .checkbox-row { display: flex; align-items: center; gap: 0.5em; margin: 0.6em 0; }
+    .checkbox-row label { margin: 0; }
+    .hint { margin: 0.2em 0 0; font-size: 0.8rem; color: #666; }
+    .hint code { background: #e8e8e8; padding: 0 0.3em; border-radius: 3px; }
+    .inline-checkboxes { display: flex; gap: 1.5em; }
+    button {
+      width: 100%;
+      padding: 0.7em;
+      font-size: 1rem;
+      background: #222;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    #status { margin-top: 0.8em; font-size: 0.9rem; }
+    #status.ok { color: #1a7a1a; }
+    #status.error { color: #b00020; }
+    #status-section { margin-top: 1.5em; }
+    #status-section h2 { font-size: 1.1rem; margin-bottom: 0.3em; }
+    #status-last-success { font-size: 0.9rem; color: #444; }
+    .status-events {
+      list-style: none;
+      padding: 0;
+      margin: 0.5em 0 0;
+      max-height: 14em;
+      overflow-y: auto;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      background: #fff;
+    }
+    .status-events li { padding: 0.4em 0.6em; border-bottom: 1px solid #eee; font-size: 0.8rem; }
+    .status-events li:last-child { border-bottom: none; }
+    .status-events li.error { background: #fdecea; color: #611a15; }
+    .status-events li.info { background: #eaf7ea; color: #1a4d1a; }
+  </style>
+</head>
+<body>
+  <h1>Art Mode Slideshow - Impostazioni</h1>
+
+  <form id="settings-form">
+    <fieldset>
+      <legend>Slideshow</legend>
+      <label for="slideIntervalMinutes">Intervallo tra le opere (minuti)</label>
+      <input type="number" id="slideIntervalMinutes" min="1" step="1" required>
+
+      <label for="crossfadeSeconds">Durata crossfade (secondi)</label>
+      <input type="number" id="crossfadeSeconds" min="0" step="0.5" required>
+
+      <label>Sorgenti immagini</label>
+      <div class="inline-checkboxes">
+        <span class="checkbox-row"><input type="checkbox" id="source-aic"><label for="source-aic">AIC (Chicago)</label></span>
+        <span class="checkbox-row"><input type="checkbox" id="source-met"><label for="source-met">Met (New York)</label></span>
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <legend>Filtri e orientamento</legend>
+      <label>Forma dell'immagine</label>
+      <div class="checkbox-row"><input type="checkbox" id="shape-any"><label for="shape-any">Qualsiasi</label></div>
+      <p class="hint">Seleziona tutte e quattro le fasce sotto in un colpo solo.</p>
+
+      <div class="checkbox-row"><input type="checkbox" id="shape-vertical"><label for="shape-vertical">Verticale</label></div>
+      <p class="hint">Immagini più alte che larghe (es. un rotolo o una figura intera).</p>
+
+      <div class="checkbox-row"><input type="checkbox" id="shape-square"><label for="shape-square">Quadrato</label></div>
+      <p class="hint">Immagini quasi quadrate, larghezza e altezza simili.</p>
+
+      <div class="checkbox-row"><input type="checkbox" id="shape-rectangular"><label for="shape-rectangular">Rettangolare</label></div>
+      <p class="hint">Immagini più larghe che alte, senza essere estreme.</p>
+
+      <div class="checkbox-row"><input type="checkbox" id="shape-panoramic"><label for="shape-panoramic">Panoramico</label></div>
+      <p class="hint">Immagini molto larghe rispetto all'altezza, tipo un paesaggio ampio.</p>
+
+      <label for="artistFilter">Filtro artista (vuoto = nessun filtro)</label>
+      <input type="text" id="artistFilter" placeholder="es. Monet;Rembrandt">
+      <p class="hint">Più valori separati da <code>;</code>: a ogni opera ne viene scelto uno a caso.</p>
+
+      <label for="regionFilter">Filtro regione/provenienza (vuoto = nessun filtro)</label>
+      <input type="text" id="regionFilter" placeholder="es. Italy;Japan">
+      <p class="hint">Più valori separati da <code>;</code>: a ogni opera ne viene scelto uno a caso.</p>
+    </fieldset>
+
+    <fieldset>
+      <legend>Didascalia</legend>
+      <div class="checkbox-row">
+        <input type="checkbox" id="showCaption">
+        <label for="showCaption">Mostra autore e titolo</label>
+      </div>
+
+      <label for="captionMode">Modalità</label>
+      <select id="captionMode">
+        <option value="fade">Dissolvenza dopo un ritardo</option>
+        <option value="fixed">Sempre visibile</option>
+      </select>
+
+      <label for="captionDelaySeconds">Ritardo prima della dissolvenza (secondi)</label>
+      <input type="number" id="captionDelaySeconds" min="1" step="1">
+
+      <label for="captionPosition">Posizione</label>
+      <select id="captionPosition">
+        <option value="top-left">In alto a sinistra</option>
+        <option value="top-center">In alto al centro</option>
+        <option value="top-right">In alto a destra</option>
+        <option value="bottom-left">In basso a sinistra</option>
+        <option value="bottom-center">In basso al centro</option>
+        <option value="bottom-right">In basso a destra</option>
+      </select>
+    </fieldset>
+
+    <button type="submit">Salva</button>
+    <div id="status"></div>
+  </form>
+
+  <section id="status-section">
+    <h2>Stato</h2>
+    <p id="status-last-success">Nessun fetch riuscito finora.</p>
+    <ul id="status-events" class="status-events"></ul>
+  </section>
+
+  <script src="/settings.js"></script>
+  <script src="/status.js"></script>
+</body>
+</html>

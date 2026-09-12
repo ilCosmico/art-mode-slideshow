@@ -1,0 +1,19 @@
+services:
+  web:
+    build: .
+    container_name: art-mode-slideshow_web
+    ports:
+      - "8095:3000"
+    volumes:
+      - ./cache:/app/cache
+      - ./data:/app/data
+    environment:
+      - PORT=3000
+      - SLIDE_INTERVAL_MINUTES=15
+      - CROSSFADE_SECONDS=3
+      - IMAGE_SOURCES=aic,met
+      - SHAPE_FILTERS=square,rectangular,panoramic
+      - CACHE_DIR=/app/cache
+      - DATA_DIR=/app/data
+      # - LOCAL_IMAGES_PATH=/app/local-images
+    restart: unless-stopped

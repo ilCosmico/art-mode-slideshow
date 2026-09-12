@@ -1,0 +1,17 @@
+{
+  "name": "art-mode-slideshow",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Digital art frame slideshow (Samsung The Frame Art Mode style) backed by public museum APIs.",
+  "license": "MIT",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "express": "^4.19.2"
+  }
+}
