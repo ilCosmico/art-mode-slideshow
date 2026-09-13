@@ -4,6 +4,10 @@
   const captionModeEl = document.getElementById('captionMode');
   const captionDelayEl = document.getElementById('captionDelaySeconds');
 
+  function t(key, fallback) {
+    return window.i18n.strings[key] || fallback;
+  }
+
   const SHAPE_BANDS = ['vertical', 'square', 'rectangular', 'panoramic'];
   const shapeAnyEl = document.getElementById('shape-any');
   const shapeBandEls = SHAPE_BANDS.map((band) => document.getElementById('shape-' + band));
@@ -74,16 +78,16 @@
         body: JSON.stringify(settingsFromFields()),
       });
       const body = await res.json();
-      if (!res.ok) throw new Error(body.error || 'Errore sconosciuto');
+      if (!res.ok) throw new Error(body.error || t('unknownErrorMessage', 'Unknown error'));
       fieldsFromSettings(body);
-      showStatus('Impostazioni salvate.', false);
+      showStatus(t('settingsSavedMessage', 'Settings saved.'), false);
     } catch (err) {
-      showStatus(`Errore: ${err.message}`, true);
+      showStatus(`${t('errorPrefix', 'Error: ')}${err.message}`, true);
     }
   });
 
   fetch('/api/settings')
     .then((r) => r.json())
     .then(fieldsFromSettings)
-    .catch((err) => showStatus(`Impossibile caricare le impostazioni: ${err.message}`, true));
+    .catch((err) => showStatus(`${t('loadSettingsErrorPrefix', 'Unable to load settings: ')}${err.message}`, true));
 })();

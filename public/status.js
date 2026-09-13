@@ -12,7 +12,7 @@
       const s = status.lastSuccess;
       lastSuccessEl.textContent = `${formatTime(s.timestamp)} - [${s.source}] ${s.message}`;
     } else {
-      lastSuccessEl.textContent = 'Nessun fetch riuscito finora.';
+      lastSuccessEl.textContent = window.i18n.strings.noSuccessYetMessage || 'No successful fetch yet.';
     }
 
     eventsEl.innerHTML = '';
@@ -29,7 +29,8 @@
       const res = await fetch('/api/status');
       render(await res.json());
     } catch (err) {
-      lastSuccessEl.textContent = `Impossibile caricare lo stato: ${err.message}`;
+      const prefix = window.i18n.strings.loadStatusErrorPrefix || 'Unable to load status: ';
+      lastSuccessEl.textContent = `${prefix}${err.message}`;
     }
   }
 
