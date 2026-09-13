@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Art Mode Slideshow - Settings</title>
+  <title data-i18n="pageTitle">Art Mode Slideshow - Settings</title>
   <style>
     body {
       margin: 0;
@@ -63,91 +63,102 @@
     .status-events li:last-child { border-bottom: none; }
     .status-events li.error { background: #fdecea; color: #611a15; }
     .status-events li.info { background: #eaf7ea; color: #1a4d1a; }
+    .language-picker { display: flex; align-items: center; gap: 0.5em; margin-bottom: 1em; font-size: 0.9rem; }
+    .language-picker select { width: auto; padding: 0.2em 0.4em; }
   </style>
 </head>
 <body>
-  <h1>Art Mode Slideshow - Impostazioni</h1>
+  <div class="language-picker">
+    <label for="language-select" data-i18n="languageLabel">Language</label>
+    <select id="language-select">
+      <option value="en">English</option>
+      <option value="it">Italiano</option>
+    </select>
+  </div>
+
+  <h1 data-i18n="heading">Art Mode Slideshow - Settings</h1>
 
   <form id="settings-form">
     <fieldset>
-      <legend>Slideshow</legend>
-      <label for="slideIntervalMinutes">Intervallo tra le opere (minuti)</label>
+      <legend data-i18n="slideshowLegend">Slideshow</legend>
+      <label for="slideIntervalMinutes" data-i18n="slideIntervalLabel">Time between artworks (minutes)</label>
       <input type="number" id="slideIntervalMinutes" min="1" step="1" required>
 
-      <label for="crossfadeSeconds">Durata crossfade (secondi)</label>
+      <label for="crossfadeSeconds" data-i18n="crossfadeLabel">Crossfade duration (seconds)</label>
       <input type="number" id="crossfadeSeconds" min="0" step="0.5" required>
 
-      <label>Sorgenti immagini</label>
+      <label data-i18n="imageSourcesLabel">Image sources</label>
       <div class="inline-checkboxes">
-        <span class="checkbox-row"><input type="checkbox" id="source-aic"><label for="source-aic">AIC (Chicago)</label></span>
-        <span class="checkbox-row"><input type="checkbox" id="source-met"><label for="source-met">Met (New York)</label></span>
+        <span class="checkbox-row"><input type="checkbox" id="source-aic"><label for="source-aic" data-i18n="sourceAicLabel">AIC (Chicago)</label></span>
+        <span class="checkbox-row"><input type="checkbox" id="source-met"><label for="source-met" data-i18n="sourceMetLabel">Met (New York)</label></span>
       </div>
     </fieldset>
 
     <fieldset>
-      <legend>Filtri e orientamento</legend>
-      <label>Forma dell'immagine</label>
-      <div class="checkbox-row"><input type="checkbox" id="shape-any"><label for="shape-any">Qualsiasi</label></div>
-      <p class="hint">Seleziona tutte e quattro le fasce sotto in un colpo solo.</p>
+      <legend data-i18n="filtersLegend">Filters and orientation</legend>
+      <label data-i18n="shapeLabel">Image shape</label>
+      <div class="checkbox-row"><input type="checkbox" id="shape-any"><label for="shape-any" data-i18n="shapeAnyLabel">Any</label></div>
+      <p class="hint" data-i18n="shapeAnyHint">Selects all four bands below at once.</p>
 
-      <div class="checkbox-row"><input type="checkbox" id="shape-vertical"><label for="shape-vertical">Verticale</label></div>
-      <p class="hint">Immagini più alte che larghe (es. un rotolo o una figura intera).</p>
+      <div class="checkbox-row"><input type="checkbox" id="shape-vertical"><label for="shape-vertical" data-i18n="shapeVerticalLabel">Vertical</label></div>
+      <p class="hint" data-i18n="shapeVerticalHint">Images taller than they are wide (e.g. a scroll or a full figure).</p>
 
-      <div class="checkbox-row"><input type="checkbox" id="shape-square"><label for="shape-square">Quadrato</label></div>
-      <p class="hint">Immagini quasi quadrate, larghezza e altezza simili.</p>
+      <div class="checkbox-row"><input type="checkbox" id="shape-square"><label for="shape-square" data-i18n="shapeSquareLabel">Square</label></div>
+      <p class="hint" data-i18n="shapeSquareHint">Nearly square images, similar width and height.</p>
 
-      <div class="checkbox-row"><input type="checkbox" id="shape-rectangular"><label for="shape-rectangular">Rettangolare</label></div>
-      <p class="hint">Immagini più larghe che alte, senza essere estreme.</p>
+      <div class="checkbox-row"><input type="checkbox" id="shape-rectangular"><label for="shape-rectangular" data-i18n="shapeRectangularLabel">Rectangular</label></div>
+      <p class="hint" data-i18n="shapeRectangularHint">Wider than tall, without being extreme.</p>
 
-      <div class="checkbox-row"><input type="checkbox" id="shape-panoramic"><label for="shape-panoramic">Panoramico</label></div>
-      <p class="hint">Immagini molto larghe rispetto all'altezza, tipo un paesaggio ampio.</p>
+      <div class="checkbox-row"><input type="checkbox" id="shape-panoramic"><label for="shape-panoramic" data-i18n="shapePanoramicLabel">Panoramic</label></div>
+      <p class="hint" data-i18n="shapePanoramicHint">Much wider than tall, like a broad landscape.</p>
 
-      <label for="artistFilter">Filtro artista (vuoto = nessun filtro)</label>
-      <input type="text" id="artistFilter" placeholder="es. Monet;Rembrandt">
-      <p class="hint">Più valori separati da <code>;</code>: a ogni opera ne viene scelto uno a caso.</p>
+      <label for="artistFilter" data-i18n="artistFilterLabel">Artist filter (empty = no filter)</label>
+      <input type="text" id="artistFilter" data-i18n-placeholder="artistFilterPlaceholder" placeholder="e.g. Monet;Rembrandt">
+      <p class="hint" data-i18n="multiValueHint">Several values separated by ";": one is picked at random for each artwork.</p>
 
-      <label for="regionFilter">Filtro regione/provenienza (vuoto = nessun filtro)</label>
-      <input type="text" id="regionFilter" placeholder="es. Italy;Japan">
-      <p class="hint">Più valori separati da <code>;</code>: a ogni opera ne viene scelto uno a caso.</p>
+      <label for="regionFilter" data-i18n="regionFilterLabel">Region/origin filter (empty = no filter)</label>
+      <input type="text" id="regionFilter" data-i18n-placeholder="regionFilterPlaceholder" placeholder="e.g. Italy;Japan">
+      <p class="hint" data-i18n="multiValueHint">Several values separated by ";": one is picked at random for each artwork.</p>
     </fieldset>
 
     <fieldset>
-      <legend>Didascalia</legend>
+      <legend data-i18n="captionLegend">Caption</legend>
       <div class="checkbox-row">
         <input type="checkbox" id="showCaption">
-        <label for="showCaption">Mostra autore e titolo</label>
+        <label for="showCaption" data-i18n="showCaptionLabel">Show artist and title</label>
       </div>
 
-      <label for="captionMode">Modalità</label>
+      <label for="captionMode" data-i18n="captionModeLabel">Mode</label>
       <select id="captionMode">
-        <option value="fade">Dissolvenza dopo un ritardo</option>
-        <option value="fixed">Sempre visibile</option>
+        <option value="fade" data-i18n="captionModeFade">Fade after a delay</option>
+        <option value="fixed" data-i18n="captionModeFixed">Always visible</option>
       </select>
 
-      <label for="captionDelaySeconds">Ritardo prima della dissolvenza (secondi)</label>
+      <label for="captionDelaySeconds" data-i18n="captionDelayLabel">Delay before fading (seconds)</label>
       <input type="number" id="captionDelaySeconds" min="1" step="1">
 
-      <label for="captionPosition">Posizione</label>
+      <label for="captionPosition" data-i18n="captionPositionLabel">Position</label>
       <select id="captionPosition">
-        <option value="top-left">In alto a sinistra</option>
-        <option value="top-center">In alto al centro</option>
-        <option value="top-right">In alto a destra</option>
-        <option value="bottom-left">In basso a sinistra</option>
-        <option value="bottom-center">In basso al centro</option>
-        <option value="bottom-right">In basso a destra</option>
+        <option value="top-left" data-i18n="positionTopLeft">Top left</option>
+        <option value="top-center" data-i18n="positionTopCenter">Top center</option>
+        <option value="top-right" data-i18n="positionTopRight">Top right</option>
+        <option value="bottom-left" data-i18n="positionBottomLeft">Bottom left</option>
+        <option value="bottom-center" data-i18n="positionBottomCenter">Bottom center</option>
+        <option value="bottom-right" data-i18n="positionBottomRight">Bottom right</option>
       </select>
     </fieldset>
 
-    <button type="submit">Salva</button>
+    <button type="submit" data-i18n="saveButton">Save</button>
     <div id="status"></div>
   </form>
 
   <section id="status-section">
-    <h2>Stato</h2>
-    <p id="status-last-success">Nessun fetch riuscito finora.</p>
+    <h2 data-i18n="statusHeading">Status</h2>
+    <p id="status-last-success" data-i18n="noSuccessYetMessage">No successful fetch yet.</p>
     <ul id="status-events" class="status-events"></ul>
   </section>
 
+  <script src="/i18n.js"></script>
   <script src="/settings.js"></script>
   <script src="/status.js"></script>
 </body>
