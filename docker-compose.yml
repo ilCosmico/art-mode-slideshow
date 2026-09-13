@@ -15,5 +15,7 @@ services:
       - SHAPE_FILTERS=square,rectangular,panoramic
       - CACHE_DIR=/app/cache
       - DATA_DIR=/app/data
+      # - CACHE_MAX_AGE_DAYS=30
+      # - CACHE_MAX_SIZE_MB=500
       # - LOCAL_IMAGES_PATH=/app/local-images
     restart: unless-stopped

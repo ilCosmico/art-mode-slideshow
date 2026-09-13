@@ -14,6 +14,16 @@ function parseListEnv(name, fallback) {
   return parsed.length > 0 ? parsed : fallback;
 }
 
+// Unset by default (null, not a numeric fallback): cache cleanup is
+// opt-in, so anyone who hasn't touched it keeps today's behavior of
+// never removing anything.
+function parseOptionalNumberEnv(name) {
+  const raw = process.env[name];
+  if (!raw) return null;
+  const parsed = Number(raw);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
 module.exports = {
   userAgent: 'art-mode-slideshow/0.1 (+https://github.com/)',
   port: parseIntEnv('PORT', 3000),
@@ -24,6 +34,10 @@ module.exports = {
   // width/height ratio must fall into to be kept. Excludes "vertical" by
   // default: this app is meant for a TV, not portrait images.
   shapeFilters: parseListEnv('SHAPE_FILTERS', ['square', 'rectangular', 'panoramic']),
+  // Both null (disabled) by default. Cleanup runs opportunistically
+  // right after a fresh download, not on a timer - see cacheCleanup.js.
+  cacheMaxAgeDays: parseOptionalNumberEnv('CACHE_MAX_AGE_DAYS'),
+  cacheMaxSizeMb: parseOptionalNumberEnv('CACHE_MAX_SIZE_MB'),
   localImagesPath: process.env.LOCAL_IMAGES_PATH || null,
   cacheDir: path.resolve(process.env.CACHE_DIR || './cache'),
   // Holds settings.json, written by the /settings panel. Separate from
