@@ -3,6 +3,7 @@ const { pickRandom } = require('./filterList');
 const { normalizeArtist } = require('./artistName');
 const { translateArtist, translateRegion } = require('./translations');
 const { getShapeBand } = require('../imageDimensions');
+const { randomElement } = require('../random');
 
 const ARTWORK_FIELDS = 'id,title,artist_display,image_id,is_public_domain,artwork_type_title,thumbnail';
 const RESULTS_PER_PAGE = 100;
@@ -88,7 +89,7 @@ async function fetchRandomArtwork({ artistFilter, regionFilter, shapeFilters = [
     const candidates = (data || []).filter((item) => item.image_id && matchesShapeFilters(item, shapeFilters));
     if (candidates.length === 0) continue;
 
-    const item = candidates[Math.floor(Math.random() * candidates.length)];
+    const item = randomElement(candidates);
     return {
       id: `aic-${item.id}`,
       title: item.title || 'Untitled',

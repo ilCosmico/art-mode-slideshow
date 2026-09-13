@@ -2,6 +2,7 @@ const config = require('../config');
 const { pickRandom } = require('./filterList');
 const { normalizeArtist } = require('./artistName');
 const { translateArtist, translateRegion } = require('./translations');
+const { randomElement } = require('../random');
 
 const SEARCH_TERMS = [
   'landscape', 'portrait', 'still life', 'flowers', 'mountains',
@@ -24,7 +25,7 @@ function buildSearchUrl({ artistFilter, regionFilter }) {
     params.set('artistOrCulture', 'true');
     params.set('q', artistFilter);
   } else {
-    params.set('q', SEARCH_TERMS[Math.floor(Math.random() * SEARCH_TERMS.length)]);
+    params.set('q', randomElement(SEARCH_TERMS));
   }
   return `https://collectionapi.metmuseum.org/public/collection/v1/search?${params.toString()}`;
 }
@@ -44,7 +45,7 @@ async function fetchRandomArtwork({ artistFilter, regionFilter } = {}) {
   if (ids.length === 0) throw new Error(`Met search returned no results for "${searchUrl}"`);
 
   for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
-    const objectId = ids[Math.floor(Math.random() * ids.length)];
+    const objectId = randomElement(ids);
     const objRes = await fetch(`https://collectionapi.metmuseum.org/public/collection/v1/objects/${objectId}`, {
       headers: { 'User-Agent': config.userAgent },
     });

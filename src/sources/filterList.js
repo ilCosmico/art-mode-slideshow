@@ -1,3 +1,5 @@
+const { randomElement } = require('../random');
+
 // artistFilter/regionFilter accept multiple values separated by ";"
 // (e.g. "Monet;Rembrandt"). Each fetchRandomArtwork() call picks one at
 // random, the same way met.js already picks a random SEARCH_TERMS entry
@@ -6,7 +8,7 @@ function pickRandom(rawValue) {
   if (!rawValue) return '';
   const values = rawValue.split(';').map((v) => v.trim()).filter(Boolean);
   if (values.length === 0) return '';
-  return values[Math.floor(Math.random() * values.length)];
+  return randomElement(values);
 }
 
 module.exports = { pickRandom };

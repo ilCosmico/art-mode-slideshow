@@ -1,6 +1,7 @@
 const fs = require('fs/promises');
 const path = require('path');
 const config = require('./config');
+const { randomElement } = require('./random');
 
 function indexPath() {
   return path.join(config.cacheDir, 'index.json');
@@ -33,10 +34,10 @@ async function getRandomEntry(preferredShapeFilters) {
 
   if (preferredShapeFilters) {
     const matching = entries.filter((e) => e.shapeBand && preferredShapeFilters.includes(e.shapeBand));
-    if (matching.length > 0) return matching[Math.floor(Math.random() * matching.length)];
+    if (matching.length > 0) return randomElement(matching);
   }
 
-  return entries[Math.floor(Math.random() * entries.length)];
+  return randomElement(entries);
 }
 
 module.exports = { loadIndex, saveIndex, getRandomEntry };
