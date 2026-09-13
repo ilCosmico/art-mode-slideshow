@@ -49,8 +49,9 @@ Not yet deployed to the home server.
   working temporarily if the museum APIs are unreachable.
 - Environment variables set the defaults on first boot
   (`SLIDE_INTERVAL_MINUTES`, `CROSSFADE_SECONDS`, `IMAGE_SOURCES`,
-  `SHAPE_FILTERS`, `LOCAL_IMAGES_PATH`, `CACHE_DIR`, `DATA_DIR`,
-  `PORT`); the `/settings` panel below overrides them at runtime,
+  `SHAPE_FILTERS`, `CACHE_MAX_AGE_DAYS`, `CACHE_MAX_SIZE_MB`,
+  `LOCAL_IMAGES_PATH`, `CACHE_DIR`, `DATA_DIR`, `PORT`); the `/settings`
+  panel below overrides them at runtime,
   persisted to `settings.json`, without touching Docker or restarting
   the container.
 
@@ -96,6 +97,8 @@ For local development without Docker: `npm install && npm start`
 | `CROSSFADE_SECONDS`        | `3`        | Duration of the CSS opacity crossfade transition.                |
 | `IMAGE_SOURCES`            | `aic,met`  | Comma-separated list of enabled museum sources.                  |
 | `SHAPE_FILTERS`            | `square,rectangular,panoramic` | Comma-separated list of allowed shape bands by real width/height ratio: `vertical` (< 1.0), `square` (1.0-1.3), `rectangular` (1.3-1.6), `panoramic` (>= 1.6). The default excludes `vertical` - portrait images aren't wanted on a TV. |
+| `CACHE_MAX_AGE_DAYS`       | (unset)    | If set, removes any cache entry (and its image file) older than this many days. Disabled by default - cache grows forever unless opted in. Checked opportunistically right after each fresh download. |
+| `CACHE_MAX_SIZE_MB`        | (unset)    | If set, keeps total cache size under this cap, evicting the oldest entries first. Disabled by default. Checked opportunistically right after each fresh download. |
 | `LOCAL_IMAGES_PATH`        | (unset)    | If set, serves images from this folder instead of the museum APIs (needs its own bind mount in `docker-compose.yml`). |
 | `CACHE_DIR`                | `./cache`  | Folder where downloaded images and `index.json` are stored.      |
 | `DATA_DIR`                 | `./data`   | Folder where `settings.json` (written by the `/settings` panel) is stored. |

@@ -148,6 +148,16 @@
       </select>
     </fieldset>
 
+    <fieldset>
+      <legend data-i18n="cacheCleanupLegend">Cache cleanup</legend>
+      <label for="cacheMaxAgeDays" data-i18n="cacheMaxAgeLabel">Max cache age (days, empty = disabled)</label>
+      <input type="number" id="cacheMaxAgeDays" min="0" step="1" data-i18n-placeholder="cacheMaxAgePlaceholder" placeholder="e.g. 30">
+
+      <label for="cacheMaxSizeMb" data-i18n="cacheMaxSizeLabel">Max cache size (MB, empty = disabled)</label>
+      <input type="number" id="cacheMaxSizeMb" min="0" step="1" data-i18n-placeholder="cacheMaxSizePlaceholder" placeholder="e.g. 500">
+      <p class="hint" data-i18n="cacheCleanupHint">Cleanup runs automatically after each new download, removing the oldest artworks first.</p>
+    </fieldset>
+
     <button type="submit" data-i18n="saveButton">Save</button>
     <div id="status"></div>
   </form>

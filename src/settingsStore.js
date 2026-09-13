@@ -20,6 +20,8 @@ function defaults() {
     crossfadeSeconds: config.crossfadeSeconds,
     imageSources: config.imageSources,
     shapeFilters: config.shapeFilters,
+    cacheMaxAgeDays: config.cacheMaxAgeDays,
+    cacheMaxSizeMb: config.cacheMaxSizeMb,
     artistFilter: '',
     regionFilter: '',
     showCaption: false,
@@ -36,6 +38,10 @@ const VALIDATORS = {
   crossfadeSeconds: (v) => nonNegativeNumber(v, 'crossfadeSeconds'),
   imageSources: nonEmptyArrayOf(VALID_SOURCES, 'imageSources'),
   shapeFilters: nonEmptyArrayOf(SHAPE_BANDS, 'shapeFilters'),
+  // 0 is a valid, if extreme, choice (e.g. "no entry survives past
+  // today"), so these accept non-negative, not strictly positive.
+  cacheMaxAgeDays: (v) => optionalNonNegativeNumber(v, 'cacheMaxAgeDays'),
+  cacheMaxSizeMb: (v) => optionalNonNegativeNumber(v, 'cacheMaxSizeMb'),
   artistFilter: (v) => String(v ?? '').trim(),
   regionFilter: (v) => String(v ?? '').trim(),
   showCaption: (v) => Boolean(v),
@@ -54,6 +60,12 @@ function nonNegativeNumber(v, field) {
   const n = Number(v);
   if (!Number.isFinite(n) || n < 0) throw new Error(`${field} must be a non-negative number`);
   return n;
+}
+
+// null/undefined means "disabled" - the setting stays opt-in.
+function optionalNonNegativeNumber(v, field) {
+  if (v === null || v === undefined || v === '') return null;
+  return nonNegativeNumber(v, field);
 }
 
 function oneOf(v, allowed, field) {

@@ -25,6 +25,8 @@
     updateShapeAnyState();
     document.getElementById('artistFilter').value = settings.artistFilter;
     document.getElementById('regionFilter').value = settings.regionFilter;
+    document.getElementById('cacheMaxAgeDays').value = settings.cacheMaxAgeDays ?? '';
+    document.getElementById('cacheMaxSizeMb').value = settings.cacheMaxSizeMb ?? '';
     document.getElementById('showCaption').checked = settings.showCaption;
     captionModeEl.value = settings.captionMode;
     captionDelayEl.value = settings.captionDelaySeconds;
@@ -39,11 +41,16 @@
 
     const shapeFilters = SHAPE_BANDS.filter((band, i) => shapeBandEls[i].checked);
 
+    const cacheMaxAgeDaysValue = document.getElementById('cacheMaxAgeDays').value;
+    const cacheMaxSizeMbValue = document.getElementById('cacheMaxSizeMb').value;
+
     return {
       slideIntervalMinutes: Number(document.getElementById('slideIntervalMinutes').value),
       crossfadeSeconds: Number(document.getElementById('crossfadeSeconds').value),
       imageSources,
       shapeFilters,
+      cacheMaxAgeDays: cacheMaxAgeDaysValue === '' ? null : Number(cacheMaxAgeDaysValue),
+      cacheMaxSizeMb: cacheMaxSizeMbValue === '' ? null : Number(cacheMaxSizeMbValue),
       artistFilter: document.getElementById('artistFilter').value,
       regionFilter: document.getElementById('regionFilter').value,
       showCaption: document.getElementById('showCaption').checked,

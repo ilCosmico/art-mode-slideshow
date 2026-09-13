@@ -2,6 +2,7 @@ const fs = require('fs/promises');
 const path = require('path');
 const config = require('./config');
 const cacheIndex = require('./cacheIndex');
+const cacheCleanup = require('./cacheCleanup');
 const imageDimensions = require('./imageDimensions');
 const settingsStore = require('./settingsStore');
 const statusLog = require('./statusLog');
@@ -51,7 +52,7 @@ async function getNextArtwork() {
     for (let attempt = 0; attempt < PER_SOURCE_ATTEMPTS; attempt++) {
       try {
         const artwork = await SOURCE_FETCHERS[sourceName](sourceParams);
-        const { response, cached } = await cacheArtwork(artwork, settings.shapeFilters);
+        const { response, cached } = await cacheArtwork(artwork, settings);
         statusLog.recordSuccess({ source: response.source, title: response.title, cached });
         return response;
       } catch (err) {
@@ -78,7 +79,7 @@ function shuffle(items) {
   return result;
 }
 
-async function cacheArtwork(artwork, shapeFilters) {
+async function cacheArtwork(artwork, settings) {
   const index = await cacheIndex.loadIndex();
   if (index[artwork.id]) return { response: toResponse(index[artwork.id]), cached: true };
 
@@ -96,8 +97,8 @@ async function cacheArtwork(artwork, shapeFilters) {
   // reject before anything touches disk or the cache index.
   const { width, height } = imageDimensions.getImageDimensions(buffer);
   const shapeBand = imageDimensions.getShapeBand(width / height);
-  if (!shapeFilters.includes(shapeBand)) {
-    throw new Error(`downloaded image "${artwork.id}" doesn't match shapeFilters [${shapeFilters}]`);
+  if (!settings.shapeFilters.includes(shapeBand)) {
+    throw new Error(`downloaded image "${artwork.id}" doesn't match shapeFilters [${settings.shapeFilters}]`);
   }
 
   await fs.mkdir(config.cacheDir, { recursive: true });
@@ -114,6 +115,16 @@ async function cacheArtwork(artwork, shapeFilters) {
     cachedAt: new Date().toISOString(),
   };
   index[artwork.id] = entry;
+
+  const cleaned = await cacheCleanup.cleanup({
+    cacheDir: config.cacheDir,
+    index,
+    newestId: artwork.id,
+    maxAgeDays: settings.cacheMaxAgeDays,
+    maxSizeMb: settings.cacheMaxSizeMb,
+  });
+  if (cleaned) console.log(`Cache cleanup removed entries (maxAgeDays=${settings.cacheMaxAgeDays}, maxSizeMb=${settings.cacheMaxSizeMb})`);
+
   await cacheIndex.saveIndex(index);
   return { response: toResponse(entry), cached: false };
 }
