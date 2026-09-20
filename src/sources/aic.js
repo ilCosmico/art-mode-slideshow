@@ -16,6 +16,11 @@ const MAX_PAGE = 10;
 // it that matches the active shape filters; a narrower filter selection
 // means more pages can come up empty before one hits.
 const MAX_ATTEMPTS = 8;
+// Width requested for the downloaded image. AIC's image server refuses to
+// scale an image up (HTTP 403, "Requests for scales in excess of 100% are
+// not allowed"), so an image narrower than this is requested at its own
+// width instead, see buildImageUrl().
+const MAX_IMAGE_WIDTH = 1686;
 const AIC_HEADERS = { 'AIC-User-Agent': config.aicUserAgent };
 const REQUEST_HEADERS = { 'User-Agent': config.userAgent, ...AIC_HEADERS };
 
@@ -87,6 +92,15 @@ function matchesShapeFilters(item, shapeFilters) {
   return !!thumbnail && shapeFilters.includes(getShapeBand(thumbnail.width / thumbnail.height));
 }
 
+// thumbnail.width is the original's width (verified live: that width is
+// served at the original size and one pixel more is refused), and the
+// candidates that reach this point all have a thumbnail, see
+// matchesShapeFilters(). Larger images keep the same request as before.
+function buildImageUrl(item) {
+  const width = Math.min(MAX_IMAGE_WIDTH, item.thumbnail.width);
+  return `https://www.artic.edu/iiif/2/${item.image_id}/full/${width},/0/default.jpg`;
+}
+
 async function fetchRandomArtwork({ artistFilter, regionFilter, categories = [], movements = [], shapeFilters = ['square', 'rectangular', 'panoramic'] } = {}) {
   // Each value is picked once per call and reused across all its
   // attempts below - artistFilter/regionFilter may hold several
@@ -119,11 +133,11 @@ async function fetchRandomArtwork({ artistFilter, regionFilter, categories = [],
       artist: normalizeAicArtist(item),
       source: 'Art Institute of Chicago',
       sourceUrl: `https://www.artic.edu/artworks/${item.id}`,
-      imageUrl: `https://www.artic.edu/iiif/2/${item.image_id}/full/1686,/0/default.jpg`,
+      imageUrl: buildImageUrl(item),
       imageHeaders: AIC_HEADERS,
     };
   }
   throw new Error('AIC: no painting matching the shape filters found after retries');
 }
 
-module.exports = { fetchRandomArtwork, buildSearchUrl };
+module.exports = { fetchRandomArtwork, buildSearchUrl, buildImageUrl };
