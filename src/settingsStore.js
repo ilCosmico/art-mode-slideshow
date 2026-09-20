@@ -2,6 +2,7 @@ const fs = require('fs/promises');
 const path = require('path');
 const config = require('./config');
 const { CATEGORY_KEYS } = require('./sources/categories');
+const { MOVEMENT_KEYS } = require('./sources/movements');
 
 const VALID_SOURCES = ['aic', 'met'];
 const SHAPE_BANDS = ['vertical', 'square', 'rectangular', 'panoramic'];
@@ -21,7 +22,8 @@ function defaults() {
     crossfadeSeconds: config.crossfadeSeconds,
     imageSources: config.imageSources,
     shapeFilters: config.shapeFilters,
-    categories: sanitizedDefaultCategories(),
+    categories: sanitizedDefault('CATEGORIES', config.categories, CATEGORY_KEYS),
+    movements: sanitizedDefault('MOVEMENTS', config.movements, MOVEMENT_KEYS),
     cacheMaxAgeDays: config.cacheMaxAgeDays,
     cacheMaxSizeMb: config.cacheMaxSizeMb,
     artistFilter: '',
@@ -42,6 +44,7 @@ const VALIDATORS = {
   shapeFilters: nonEmptyArrayOf(SHAPE_BANDS, 'shapeFilters'),
   // Unlike the lists above, empty is valid here: it means no subject filter.
   categories: arrayOf(CATEGORY_KEYS, 'categories'),
+  movements: arrayOf(MOVEMENT_KEYS, 'movements'),
   // 0 is a valid, if extreme, choice (e.g. "no entry survives past
   // today"), so these accept non-negative, not strictly positive.
   cacheMaxAgeDays: (v) => optionalNonNegativeNumber(v, 'cacheMaxAgeDays'),
@@ -95,12 +98,12 @@ function nonEmptyArrayOf(allowed, field) {
   };
 }
 
-// CATEGORIES comes from the environment, so a typo in it is dropped with a
-// message instead of leaving every source unable to match the filter.
-function sanitizedDefaultCategories() {
-  const unknown = config.categories.filter((key) => !CATEGORY_KEYS.includes(key));
-  if (unknown.length > 0) console.error(`Ignoring unknown CATEGORIES values: ${unknown.join(', ')}`);
-  return config.categories.filter((key) => CATEGORY_KEYS.includes(key));
+// CATEGORIES and MOVEMENTS come from the environment, so a typo in them is
+// dropped with a message instead of leaving every source unable to match.
+function sanitizedDefault(envName, values, allowed) {
+  const unknown = values.filter((key) => !allowed.includes(key));
+  if (unknown.length > 0) console.error(`Ignoring unknown ${envName} values: ${unknown.join(', ')}`);
+  return values.filter((key) => allowed.includes(key));
 }
 
 // Only used while loading settings.json at startup: unlike the strict

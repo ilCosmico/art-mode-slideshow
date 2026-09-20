@@ -70,7 +70,10 @@ selected band), an artist/culture filter and a region/origin filter
 e.g. `Monet;Rembrandt`, one picked at random on every fetch), a subject
 filter (checkboxes: Landscapes, Portraits, Still life, Religious, War;
 with several selected, a work from any of them is shown, and nothing
-selected means no subject filter), and the caption overlay (on/off, fixed or fade-after-delay, position). `/` (the
+selected means no subject filter), an art movement filter (Impressionism,
+Baroque, Realism and so on; same rules, but only the Art Institute of
+Chicago has a searchable movement field, so the Met is skipped while a
+movement is selected), and the caption overlay (on/off, fixed or fade-after-delay, position). `/` (the
 kiosk page) re-polls its config every cycle, so a change made in the
 panel takes effect starting the next image, no manual reload needed on
 the TV. Settings are written to
@@ -104,6 +107,7 @@ For local development without Docker: `npm install && npm start`
 | `CACHE_MAX_AGE_DAYS`       | (unset)    | If set, removes any cache entry (and its image file) older than this many days. Disabled by default - cache grows forever unless opted in. Checked opportunistically right after each fresh download. |
 | `CACHE_MAX_SIZE_MB`        | (unset)    | If set, keeps total cache size under this cap, evicting the oldest entries first. Disabled by default. Checked opportunistically right after each fresh download. |
 | `CATEGORIES`               | (unset)    | Comma-separated subject categories an artwork must belong to (any one of them): `landscape`, `portrait`, `stillLife`, `religious`, `war`. Unset means no subject filter. A source with no terms for the selected categories is skipped, not fetched unfiltered. |
+| `MOVEMENTS`                | (unset)    | Comma-separated art movement keys (any one of them), for example `impressionism,postImpressionism`; the full list is in `src/sources/movements.js`. AIC only: while set, the Met is skipped. Unset means no movement filter. |
 | `LOCAL_IMAGES_PATH`        | (unset)    | If set, serves images from this folder instead of the museum APIs (needs its own bind mount in `docker-compose.yml`). |
 | `CACHE_DIR`                | `./cache`  | Folder where downloaded images and `index.json` are stored.      |
 | `DATA_DIR`                 | `./data`   | Folder where `settings.json` (written by the `/settings` panel) is stored. |

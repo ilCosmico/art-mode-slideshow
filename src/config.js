@@ -41,6 +41,8 @@ module.exports = {
   // Subject categories (see sources/categories.js) an artwork must belong
   // to, any one of them. Empty by default: no subject filter.
   categories: parseListEnv('CATEGORIES', []),
+  // Art movements (see sources/movements.js), AIC only. Same rules.
+  movements: parseListEnv('MOVEMENTS', []),
   // Both null (disabled) by default. Cleanup runs opportunistically
   // right after a fresh download, not on a timer - see cacheCleanup.js.
   cacheMaxAgeDays: parseOptionalNumberEnv('CACHE_MAX_AGE_DAYS'),
