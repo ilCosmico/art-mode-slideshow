@@ -1,11 +1,11 @@
 const config = require('../config');
 const { pickRandom } = require('./filterList');
-const { normalizeArtist } = require('./artistName');
+const { normalizeAicArtist } = require('./artistName');
 const { translateArtist, translateRegion } = require('./translations');
 const { getShapeBand } = require('../imageDimensions');
 const { randomElement } = require('../random');
 
-const ARTWORK_FIELDS = 'id,title,artist_display,image_id,is_public_domain,artwork_type_title,thumbnail';
+const ARTWORK_FIELDS = 'id,title,artist_display,artist_title,image_id,is_public_domain,artwork_type_title,thumbnail';
 const RESULTS_PER_PAGE = 100;
 // AIC's search endpoint caps result-window offset around 1000, so pages
 // beyond this 403 regardless of how many results actually match.
@@ -95,7 +95,7 @@ async function fetchRandomArtwork({ artistFilter, regionFilter, shapeFilters = [
     return {
       id: `aic-${item.id}`,
       title: item.title || 'Untitled',
-      artist: normalizeArtist(item.artist_display),
+      artist: normalizeAicArtist(item),
       source: 'Art Institute of Chicago',
       sourceUrl: `https://www.artic.edu/artworks/${item.id}`,
       imageUrl: `https://www.artic.edu/iiif/2/${item.image_id}/full/1686,/0/default.jpg`,
