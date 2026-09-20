@@ -49,6 +49,15 @@
     #status-section { margin-top: 1.5em; }
     #status-section h2 { font-size: 1.1rem; margin-bottom: 0.3em; }
     #status-last-success { font-size: 0.9rem; color: #444; }
+    .status-sidelined { list-style: none; padding: 0; margin: 0.5em 0 0; }
+    .status-sidelined li {
+      padding: 0.4em 0.6em;
+      margin-bottom: 0.3em;
+      border-radius: 6px;
+      background: #fff4e0;
+      color: #6b4300;
+      font-size: 0.85rem;
+    }
     .status-events {
       list-style: none;
       padding: 0;
@@ -165,6 +174,7 @@
   <section id="status-section">
     <h2 data-i18n="statusHeading">Status</h2>
     <p id="status-last-success" data-i18n="noSuccessYetMessage">No successful fetch yet.</p>
+    <ul id="status-sidelined" class="status-sidelined"></ul>
     <ul id="status-events" class="status-events"></ul>
   </section>
 

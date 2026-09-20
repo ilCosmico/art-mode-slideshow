@@ -51,5 +51,6 @@
   "loadSettingsErrorPrefix": "Unable to load settings: ",
   "statusHeading": "Status",
   "noSuccessYetMessage": "No successful fetch yet.",
+  "sourceSidelinedMessage": "{source} is paused after repeated download failures. It will be retried after {time}.",
   "loadStatusErrorPrefix": "Unable to load status: "
 }

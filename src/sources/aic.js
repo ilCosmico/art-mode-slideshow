@@ -14,6 +14,8 @@ const MAX_PAGE = 10;
 // it that matches the active shape filters; a narrower filter selection
 // means more pages can come up empty before one hits.
 const MAX_ATTEMPTS = 8;
+const AIC_HEADERS = { 'AIC-User-Agent': config.aicUserAgent };
+const REQUEST_HEADERS = { 'User-Agent': config.userAgent, ...AIC_HEADERS };
 
 // Fixed clauses plus whichever optional filters are set, combined as a
 // single bool/must array (verified live: AIC doesn't care about clause
@@ -53,7 +55,7 @@ async function fetchTotalPages(filters) {
   const params = new URLSearchParams({ fields: 'id', limit: '1', page: '1' });
   applyMustClauses(params, buildMustClauses(filters));
   const url = `https://api.artic.edu/api/v1/artworks/search?${params.toString()}`;
-  const res = await fetch(url, { headers: { 'User-Agent': config.userAgent } });
+  const res = await fetch(url, { headers: REQUEST_HEADERS });
   if (!res.ok) throw new Error(`AIC search failed: ${res.status}`);
   const { pagination } = await res.json();
   const total = pagination?.total || 0;
@@ -82,7 +84,7 @@ async function fetchRandomArtwork({ artistFilter, regionFilter, shapeFilters = [
   for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
     const page = 1 + Math.floor(Math.random() * totalPages);
     const res = await fetch(buildSearchUrl(page, { artistFilter: artist, regionFilter: region }), {
-      headers: { 'User-Agent': config.userAgent },
+      headers: REQUEST_HEADERS,
     });
     if (!res.ok) throw new Error(`AIC search failed: ${res.status}`);
     const { data } = await res.json();
@@ -97,6 +99,7 @@ async function fetchRandomArtwork({ artistFilter, regionFilter, shapeFilters = [
       source: 'Art Institute of Chicago',
       sourceUrl: `https://www.artic.edu/artworks/${item.id}`,
       imageUrl: `https://www.artic.edu/iiif/2/${item.image_id}/full/1686,/0/default.jpg`,
+      imageHeaders: AIC_HEADERS,
     };
   }
   throw new Error('AIC: no painting matching the shape filters found after retries');

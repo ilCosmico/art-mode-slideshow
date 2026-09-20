@@ -51,5 +51,6 @@
   "loadSettingsErrorPrefix": "Impossibile caricare le impostazioni: ",
   "statusHeading": "Stato",
   "noSuccessYetMessage": "Nessun fetch riuscito finora.",
+  "sourceSidelinedMessage": "{source} è in pausa dopo ripetuti errori di download. Verrà riprovata dopo le {time}.",
   "loadStatusErrorPrefix": "Impossibile caricare lo stato: "
 }

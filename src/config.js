@@ -26,6 +26,10 @@ function parseOptionalNumberEnv(name) {
 
 module.exports = {
   userAgent: 'art-mode-slideshow/0.1 (+https://github.com/)',
+  // AIC's API docs ("Authentication") ask every client to send its
+  // project name and a contact in this header. Their image host returns a
+  // bot-check 403 to requests that lack it.
+  aicUserAgent: 'art-mode-slideshow (https://github.com/ilCosmico/art-mode-slideshow)',
   port: parseIntEnv('PORT', 3000),
   slideIntervalMinutes: parseIntEnv('SLIDE_INTERVAL_MINUTES', 15),
   crossfadeSeconds: parseIntEnv('CROSSFADE_SECONDS', 3),
