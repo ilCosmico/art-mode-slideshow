@@ -38,6 +38,9 @@ module.exports = {
   // width/height ratio must fall into to be kept. Excludes "vertical" by
   // default: this app is meant for a TV, not portrait images.
   shapeFilters: parseListEnv('SHAPE_FILTERS', ['square', 'rectangular', 'panoramic']),
+  // Subject categories (see sources/categories.js) an artwork must belong
+  // to, any one of them. Empty by default: no subject filter.
+  categories: parseListEnv('CATEGORIES', []),
   // Both null (disabled) by default. Cleanup runs opportunistically
   // right after a fresh download, not on a timer - see cacheCleanup.js.
   cacheMaxAgeDays: parseOptionalNumberEnv('CACHE_MAX_AGE_DAYS'),

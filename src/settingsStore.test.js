@@ -43,6 +43,18 @@ test('rejects an unknown shapeFilters band', async () => {
   await assert.rejects(() => settingsStore.update({ shapeFilters: ['diagonal'] }));
 });
 
+test('categories defaults to none, meaning no subject filter', () => {
+  assert.deepEqual(settingsStore.getAll().categories, []);
+});
+
+test('accepts known categories and an empty list, rejects unknown ones', async () => {
+  const updated = await settingsStore.update({ categories: ['landscape', 'war'] });
+  assert.deepEqual(updated.categories, ['landscape', 'war']);
+  assert.deepEqual((await settingsStore.update({ categories: [] })).categories, []);
+  await assert.rejects(() => settingsStore.update({ categories: ['bogus'] }));
+  await assert.rejects(() => settingsStore.update({ categories: 'landscape' }));
+});
+
 test('rejects a captionMode outside the known set', async () => {
   await assert.rejects(() => settingsStore.update({ captionMode: 'sideways' }));
 });

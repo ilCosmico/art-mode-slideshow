@@ -2,6 +2,7 @@ const config = require('../config');
 const { pickRandom } = require('./filterList');
 const { normalizeAicArtist } = require('./artistName');
 const { translateArtist, translateRegion } = require('./translations');
+const { termsForSource } = require('./categories');
 const { getShapeBand } = require('../imageDimensions');
 const { randomElement } = require('../random');
 
@@ -20,10 +21,15 @@ const REQUEST_HEADERS = { 'User-Agent': config.userAgent, ...AIC_HEADERS };
 // Fixed clauses plus whichever optional filters are set, combined as a
 // single bool/must array (verified live: AIC doesn't care about clause
 // order here, unlike Met's search endpoint - see met.js).
-function buildMustClauses({ artistFilter, regionFilter }) {
+function buildMustClauses({ artistFilter, regionFilter, subjectTerms = [] }) {
   const clauses = [{ match: { artwork_type_title: 'Painting' } }];
   if (artistFilter) clauses.push({ match: { artist_title: artistFilter } });
   if (regionFilter) clauses.push({ match: { place_of_origin: regionFilter } });
+  // `terms` on the .keyword field is an exact match on any of the values.
+  // A plain `match` on subject_titles is analyzed text search, looser than
+  // the exact value (verified live: "still life" gives 137 works with it
+  // and 59 with an exact match).
+  if (subjectTerms.length > 0) clauses.push({ terms: { 'subject_titles.keyword': subjectTerms } });
   clauses.push({ term: { is_public_domain: true } });
   return clauses;
 }
@@ -32,7 +38,9 @@ function applyMustClauses(params, clauses) {
   clauses.forEach((clause, i) => {
     const [type, fields] = Object.entries(clause)[0];
     const [field, value] = Object.entries(fields)[0];
-    params.set(`query[bool][must][${i}][${type}][${field}]`, value);
+    const prefix = `query[bool][must][${i}][${type}][${field}]`;
+    if (Array.isArray(value)) value.forEach((v, j) => params.set(`${prefix}[${j}]`, v));
+    else params.set(prefix, value);
   });
 }
 
@@ -72,18 +80,19 @@ function matchesShapeFilters(item, shapeFilters) {
   return !!thumbnail && shapeFilters.includes(getShapeBand(thumbnail.width / thumbnail.height));
 }
 
-async function fetchRandomArtwork({ artistFilter, regionFilter, shapeFilters = ['square', 'rectangular', 'panoramic'] } = {}) {
+async function fetchRandomArtwork({ artistFilter, regionFilter, categories = [], shapeFilters = ['square', 'rectangular', 'panoramic'] } = {}) {
   // Each value is picked once per call and reused across all its
   // attempts below - artistFilter/regionFilter may hold several
   // ";"-separated values, but mixing a different one in mid-call would
   // make the page count (and the pages themselves) inconsistent.
   const artist = translateArtist(pickRandom(artistFilter));
   const region = translateRegion(pickRandom(regionFilter));
-  const totalPages = await fetchTotalPages({ artistFilter: artist, regionFilter: region });
+  const filters = { artistFilter: artist, regionFilter: region, subjectTerms: termsForSource('aic', categories) };
+  const totalPages = await fetchTotalPages(filters);
 
   for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
     const page = 1 + Math.floor(Math.random() * totalPages);
-    const res = await fetch(buildSearchUrl(page, { artistFilter: artist, regionFilter: region }), {
+    const res = await fetch(buildSearchUrl(page, filters), {
       headers: REQUEST_HEADERS,
     });
     if (!res.ok) throw new Error(`AIC search failed: ${res.status}`);
@@ -105,4 +114,4 @@ async function fetchRandomArtwork({ artistFilter, regionFilter, shapeFilters = [
   throw new Error('AIC: no painting matching the shape filters found after retries');
 }
 
-module.exports = { fetchRandomArtwork };
+module.exports = { fetchRandomArtwork, buildSearchUrl };

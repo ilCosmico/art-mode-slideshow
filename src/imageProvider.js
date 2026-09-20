@@ -8,6 +8,7 @@ const settingsStore = require('./settingsStore');
 const statusLog = require('./statusLog');
 const sourceHealth = require('./sourceHealth');
 const aic = require('./sources/aic');
+const { sourceSupports } = require('./sources/categories');
 const met = require('./sources/met');
 const local = require('./sources/local');
 
@@ -44,9 +45,14 @@ async function getNextArtwork() {
     artistFilter: settings.artistFilter,
     regionFilter: settings.regionFilter,
     shapeFilters: settings.shapeFilters,
+    categories: settings.categories,
   };
 
-  const remaining = shuffle(enabledSources.filter((s) => !sourceHealth.isSidelined(s)));
+  // A source is left out for this fetch, not fetched unfiltered, when it
+  // has no terms for any selected category or has been sidelined.
+  const remaining = shuffle(enabledSources.filter(
+    (s) => !sourceHealth.isSidelined(s) && sourceSupports(s, settings.categories),
+  ));
   let lastError;
   while (remaining.length > 0) {
     const sourceName = remaining.pop();
@@ -68,7 +74,7 @@ async function getNextArtwork() {
   }
 
   const fallbackEntry = await cacheIndex.getRandomEntry(settings.shapeFilters);
-  if (!fallbackEntry) throw lastError || new Error('every enabled source is sidelined and the cache is empty');
+  if (!fallbackEntry) throw lastError || new Error('no enabled source can be used right now (sidelined, or no match for the selected categories) and the cache is empty');
   const response = toResponse(fallbackEntry);
   statusLog.recordSuccess({ source: response.source, title: response.title, cached: true });
   return response;

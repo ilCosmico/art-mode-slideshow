@@ -67,8 +67,10 @@ Rectangular, Panoramic, or an "Any" shortcut that checks all four - a
 downloaded image passes if its real width/height ratio falls into any
 selected band), an artist/culture filter and a region/origin filter
 (both apply to AIC and Met; each accepts several `;`-separated values,
-e.g. `Monet;Rembrandt`, one picked at random on every fetch), and the
-caption overlay (on/off, fixed or fade-after-delay, position). `/` (the
+e.g. `Monet;Rembrandt`, one picked at random on every fetch), a subject
+filter (checkboxes: Landscapes, Portraits, Still life, Religious, War;
+with several selected, a work from any of them is shown, and nothing
+selected means no subject filter), and the caption overlay (on/off, fixed or fade-after-delay, position). `/` (the
 kiosk page) re-polls its config every cycle, so a change made in the
 panel takes effect starting the next image, no manual reload needed on
 the TV. Settings are written to
@@ -101,6 +103,7 @@ For local development without Docker: `npm install && npm start`
 | `SHAPE_FILTERS`            | `square,rectangular,panoramic` | Comma-separated list of allowed shape bands by real width/height ratio: `vertical` (< 1.0), `square` (1.0-1.3), `rectangular` (1.3-1.6), `panoramic` (>= 1.6). The default excludes `vertical` - portrait images aren't wanted on a TV. |
 | `CACHE_MAX_AGE_DAYS`       | (unset)    | If set, removes any cache entry (and its image file) older than this many days. Disabled by default - cache grows forever unless opted in. Checked opportunistically right after each fresh download. |
 | `CACHE_MAX_SIZE_MB`        | (unset)    | If set, keeps total cache size under this cap, evicting the oldest entries first. Disabled by default. Checked opportunistically right after each fresh download. |
+| `CATEGORIES`               | (unset)    | Comma-separated subject categories an artwork must belong to (any one of them): `landscape`, `portrait`, `stillLife`, `religious`, `war`. Unset means no subject filter. A source with no terms for the selected categories is skipped, not fetched unfiltered. |
 | `LOCAL_IMAGES_PATH`        | (unset)    | If set, serves images from this folder instead of the museum APIs (needs its own bind mount in `docker-compose.yml`). |
 | `CACHE_DIR`                | `./cache`  | Folder where downloaded images and `index.json` are stored.      |
 | `DATA_DIR`                 | `./data`   | Folder where `settings.json` (written by the `/settings` panel) is stored. |

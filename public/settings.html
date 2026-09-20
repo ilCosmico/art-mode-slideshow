@@ -33,6 +33,7 @@
     .hint { margin: 0.2em 0 0; font-size: 0.8rem; color: #666; }
     .hint code { background: #e8e8e8; padding: 0 0.3em; border-radius: 3px; }
     .inline-checkboxes { display: flex; gap: 1.5em; }
+    .inline-checkboxes.wrap { flex-wrap: wrap; gap: 0 1.5em; }
     button {
       width: 100%;
       padding: 0.7em;
@@ -128,6 +129,10 @@
       <label for="regionFilter" data-i18n="regionFilterLabel">Region/origin filter (empty = no filter)</label>
       <input type="text" id="regionFilter" data-i18n-placeholder="regionFilterPlaceholder" placeholder="e.g. Italy;Japan">
       <p class="hint" data-i18n="multiValueHint">Several values separated by ";": one is picked at random for each artwork.</p>
+
+      <label data-i18n="categoriesLabel">Subject (none selected = no filter)</label>
+      <div id="categories" class="inline-checkboxes wrap"></div>
+      <p class="hint" data-i18n="categoriesHint">With several selected, an artwork from any of them is shown. Bigger categories come up more often. Artist, region and shape filters still apply on top.</p>
     </fieldset>
 
     <fieldset>

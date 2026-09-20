@@ -4,6 +4,7 @@ const config = require('./src/config');
 const settingsStore = require('./src/settingsStore');
 const statusLog = require('./src/statusLog');
 const sourceHealth = require('./src/sourceHealth');
+const { CATEGORY_KEYS } = require('./src/sources/categories');
 const { getNextArtwork } = require('./src/imageProvider');
 
 const app = express();
@@ -45,6 +46,10 @@ app.post('/api/settings', async (req, res) => {
   } catch (err) {
     res.status(400).json({ error: err.message });
   }
+});
+
+app.get('/api/categories', (req, res) => {
+  res.json(CATEGORY_KEYS);
 });
 
 app.get('/api/status', (req, res) => {
