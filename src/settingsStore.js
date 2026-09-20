@@ -1,6 +1,7 @@
 const fs = require('fs/promises');
 const path = require('path');
 const config = require('./config');
+const { CATEGORY_KEYS } = require('./sources/categories');
 
 const VALID_SOURCES = ['aic', 'met'];
 const SHAPE_BANDS = ['vertical', 'square', 'rectangular', 'panoramic'];
@@ -20,6 +21,7 @@ function defaults() {
     crossfadeSeconds: config.crossfadeSeconds,
     imageSources: config.imageSources,
     shapeFilters: config.shapeFilters,
+    categories: sanitizedDefaultCategories(),
     cacheMaxAgeDays: config.cacheMaxAgeDays,
     cacheMaxSizeMb: config.cacheMaxSizeMb,
     artistFilter: '',
@@ -38,6 +40,8 @@ const VALIDATORS = {
   crossfadeSeconds: (v) => nonNegativeNumber(v, 'crossfadeSeconds'),
   imageSources: nonEmptyArrayOf(VALID_SOURCES, 'imageSources'),
   shapeFilters: nonEmptyArrayOf(SHAPE_BANDS, 'shapeFilters'),
+  // Unlike the lists above, empty is valid here: it means no subject filter.
+  categories: arrayOf(CATEGORY_KEYS, 'categories'),
   // 0 is a valid, if extreme, choice (e.g. "no entry survives past
   // today"), so these accept non-negative, not strictly positive.
   cacheMaxAgeDays: (v) => optionalNonNegativeNumber(v, 'cacheMaxAgeDays'),
@@ -73,14 +77,30 @@ function oneOf(v, allowed, field) {
   return v;
 }
 
-function nonEmptyArrayOf(allowed, field) {
+function arrayOf(allowed, field) {
   return (v) => {
-    if (!Array.isArray(v) || v.length === 0) throw new Error(`${field} must be a non-empty array`);
+    if (!Array.isArray(v)) throw new Error(`${field} must be an array`);
     const values = v.map(String);
     const invalid = values.filter((x) => !allowed.includes(x));
     if (invalid.length > 0) throw new Error(`${field} contains unknown values: ${invalid.join(', ')}`);
     return values;
   };
+}
+
+function nonEmptyArrayOf(allowed, field) {
+  const validate = arrayOf(allowed, field);
+  return (v) => {
+    if (!Array.isArray(v) || v.length === 0) throw new Error(`${field} must be a non-empty array`);
+    return validate(v);
+  };
+}
+
+// CATEGORIES comes from the environment, so a typo in it is dropped with a
+// message instead of leaving every source unable to match the filter.
+function sanitizedDefaultCategories() {
+  const unknown = config.categories.filter((key) => !CATEGORY_KEYS.includes(key));
+  if (unknown.length > 0) console.error(`Ignoring unknown CATEGORIES values: ${unknown.join(', ')}`);
+  return config.categories.filter((key) => CATEGORY_KEYS.includes(key));
 }
 
 // Only used while loading settings.json at startup: unlike the strict

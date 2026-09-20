@@ -12,6 +12,37 @@
   const shapeAnyEl = document.getElementById('shape-any');
   const shapeBandEls = SHAPE_BANDS.map((band) => document.getElementById('shape-' + band));
 
+  // The category list comes from the server (src/sources/categories.js), so
+  // adding a category there is enough; its label is category<Name>Label in
+  // the locale files.
+  const categoriesEl = document.getElementById('categories');
+  let categoryKeys = [];
+
+  function renderCategoryLabels() {
+    categoryKeys.forEach((key) => {
+      const labelKey = `category${key.charAt(0).toUpperCase()}${key.slice(1)}Label`;
+      document.querySelector(`label[for="category-${key}"]`).textContent = t(labelKey, key);
+    });
+  }
+
+  function buildCategoryCheckboxes(keys) {
+    categoryKeys = keys;
+    keys.forEach((key) => {
+      const row = document.createElement('span');
+      row.className = 'checkbox-row';
+      const input = document.createElement('input');
+      input.type = 'checkbox';
+      input.id = `category-${key}`;
+      const label = document.createElement('label');
+      label.htmlFor = input.id;
+      row.append(input, label);
+      categoriesEl.appendChild(row);
+    });
+    renderCategoryLabels();
+  }
+
+  window.i18n.onChange(renderCategoryLabels);
+
   function updateShapeAnyState() {
     shapeAnyEl.checked = shapeBandEls.every((el) => el.checked);
   }
@@ -23,6 +54,7 @@
     document.getElementById('source-met').checked = settings.imageSources.includes('met');
     SHAPE_BANDS.forEach((band, i) => { shapeBandEls[i].checked = settings.shapeFilters.includes(band); });
     updateShapeAnyState();
+    categoryKeys.forEach((key) => { document.getElementById(`category-${key}`).checked = settings.categories.includes(key); });
     document.getElementById('artistFilter').value = settings.artistFilter;
     document.getElementById('regionFilter').value = settings.regionFilter;
     document.getElementById('cacheMaxAgeDays').value = settings.cacheMaxAgeDays ?? '';
@@ -49,6 +81,7 @@
       crossfadeSeconds: Number(document.getElementById('crossfadeSeconds').value),
       imageSources,
       shapeFilters,
+      categories: categoryKeys.filter((key) => document.getElementById(`category-${key}`).checked),
       cacheMaxAgeDays: cacheMaxAgeDaysValue === '' ? null : Number(cacheMaxAgeDaysValue),
       cacheMaxSizeMb: cacheMaxSizeMbValue === '' ? null : Number(cacheMaxSizeMbValue),
       artistFilter: document.getElementById('artistFilter').value,
@@ -93,8 +126,10 @@
     }
   });
 
-  fetch('/api/settings')
-    .then((r) => r.json())
-    .then(fieldsFromSettings)
+  Promise.all([fetch('/api/categories').then((r) => r.json()), fetch('/api/settings').then((r) => r.json())])
+    .then(([keys, settings]) => {
+      buildCategoryCheckboxes(keys);
+      fieldsFromSettings(settings);
+    })
     .catch((err) => showStatus(`${t('loadSettingsErrorPrefix', 'Unable to load settings: ')}${err.message}`, true));
 })();
