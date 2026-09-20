@@ -41,6 +41,7 @@ test('known Italian region terms resolve to the English API term', () => {
 test('known Italian artist terms resolve to the anglicized form', () => {
   assert.equal(translateArtist('Raffaello'), 'Raphael');
   assert.equal(translateArtist('Tiziano'), 'Titian');
+  assert.equal(translateArtist('Kandinskij'), 'Kandinsky');
 });
 
 test('lookup is case-insensitive and tolerates surrounding whitespace', () => {

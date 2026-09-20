@@ -25,5 +25,6 @@ module.exports = {
   artists: {
     raffaello: 'Raphael',
     tiziano: 'Titian',
+    kandinskij: 'Kandinsky',
   },
 };
