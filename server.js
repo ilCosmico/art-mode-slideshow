@@ -5,6 +5,7 @@ const settingsStore = require('./src/settingsStore');
 const statusLog = require('./src/statusLog');
 const sourceHealth = require('./src/sourceHealth');
 const { CATEGORY_KEYS } = require('./src/sources/categories');
+const { MOVEMENT_KEYS } = require('./src/sources/movements');
 const { getNextArtwork } = require('./src/imageProvider');
 
 const app = express();
@@ -50,6 +51,10 @@ app.post('/api/settings', async (req, res) => {
 
 app.get('/api/categories', (req, res) => {
   res.json(CATEGORY_KEYS);
+});
+
+app.get('/api/movements', (req, res) => {
+  res.json(MOVEMENT_KEYS);
 });
 
 app.get('/api/status', (req, res) => {

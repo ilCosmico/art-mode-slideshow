@@ -30,3 +30,27 @@ test('the subject clause sits alongside the artist clause, so both must match', 
   // painting type, artist, subject, public domain
   assert.equal(clauseIndexes.size, 4);
 });
+
+test('without style terms there is no style clause', () => {
+  const params = queryParams(buildSearchUrl(1, { subjectTerms: ['war'] }));
+  assert.equal(Object.keys(params).some((k) => k.includes('style_titles')), false);
+});
+
+test('style terms become one exact "terms" clause on style_titles.keyword', () => {
+  const params = queryParams(buildSearchUrl(1, { styleTerms: ['Impressionism', 'Realism'] }));
+  const keys = Object.keys(params).filter((k) => k.includes('[terms][style_titles.keyword]'));
+  assert.equal(keys.length, 2);
+  assert.deepEqual(keys.map((k) => params[k]).sort(), ['Impressionism', 'Realism']);
+});
+
+test('a style clause never leaks a text match on the movement: Impressionism does not become a word search', () => {
+  const params = queryParams(buildSearchUrl(1, { styleTerms: ['Impressionism'] }));
+  assert.equal(Object.keys(params).some((k) => k.includes('[match][style_title')), false);
+});
+
+test('subject, style and artist clauses all sit in the same query, so all must match', () => {
+  const params = queryParams(buildSearchUrl(1, { artistFilter: 'Monet', subjectTerms: ['landscapes'], styleTerms: ['Impressionism'] }));
+  const clauseIndexes = new Set(Object.keys(params).map((k) => k.match(/\[must\]\[(\d+)\]/)?.[1]).filter(Boolean));
+  // painting type, artist, subject, style, public domain
+  assert.equal(clauseIndexes.size, 5);
+});

@@ -9,6 +9,7 @@ const statusLog = require('./statusLog');
 const sourceHealth = require('./sourceHealth');
 const aic = require('./sources/aic');
 const { sourceSupports } = require('./sources/categories');
+const { sourceSupportsMovements } = require('./sources/movements');
 const met = require('./sources/met');
 const local = require('./sources/local');
 
@@ -46,12 +47,16 @@ async function getNextArtwork() {
     regionFilter: settings.regionFilter,
     shapeFilters: settings.shapeFilters,
     categories: settings.categories,
+    movements: settings.movements,
   };
 
   // A source is left out for this fetch, not fetched unfiltered, when it
-  // has no terms for any selected category or has been sidelined.
+  // has no terms for any selected category, cannot filter by the selected
+  // movements, or has been sidelined.
   const remaining = shuffle(enabledSources.filter(
-    (s) => !sourceHealth.isSidelined(s) && sourceSupports(s, settings.categories),
+    (s) => !sourceHealth.isSidelined(s)
+      && sourceSupports(s, settings.categories)
+      && sourceSupportsMovements(s, settings.movements),
   ));
   let lastError;
   while (remaining.length > 0) {
@@ -74,7 +79,7 @@ async function getNextArtwork() {
   }
 
   const fallbackEntry = await cacheIndex.getRandomEntry(settings.shapeFilters);
-  if (!fallbackEntry) throw lastError || new Error('no enabled source can be used right now (sidelined, or no match for the selected categories) and the cache is empty');
+  if (!fallbackEntry) throw lastError || new Error('no enabled source can be used right now (sidelined, or unable to match the selected categories or movements) and the cache is empty');
   const response = toResponse(fallbackEntry);
   statusLog.recordSuccess({ source: response.source, title: response.title, cached: true });
   return response;

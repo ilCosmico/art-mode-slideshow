@@ -3,6 +3,7 @@ const { pickRandom } = require('./filterList');
 const { normalizeAicArtist } = require('./artistName');
 const { translateArtist, translateRegion } = require('./translations');
 const { termsForSource } = require('./categories');
+const { styleValues } = require('./movements');
 const { getShapeBand } = require('../imageDimensions');
 const { randomElement } = require('../random');
 
@@ -21,17 +22,23 @@ const REQUEST_HEADERS = { 'User-Agent': config.userAgent, ...AIC_HEADERS };
 // Fixed clauses plus whichever optional filters are set, combined as a
 // single bool/must array (verified live: AIC doesn't care about clause
 // order here, unlike Met's search endpoint - see met.js).
-function buildMustClauses({ artistFilter, regionFilter, subjectTerms = [] }) {
+function buildMustClauses({ artistFilter, regionFilter, subjectTerms = [], styleTerms = [] }) {
   const clauses = [{ match: { artwork_type_title: 'Painting' } }];
   if (artistFilter) clauses.push({ match: { artist_title: artistFilter } });
   if (regionFilter) clauses.push({ match: { place_of_origin: regionFilter } });
   // `terms` on the .keyword field is an exact match on any of the values.
-  // A plain `match` on subject_titles is analyzed text search, looser than
-  // the exact value (verified live: "still life" gives 137 works with it
-  // and 59 with an exact match).
-  if (subjectTerms.length > 0) clauses.push({ terms: { 'subject_titles.keyword': subjectTerms } });
+  // A plain `match` on subject_titles or style_titles is analyzed text
+  // search, looser than the exact value (verified live: "still life" gives
+  // 137 works with it and 59 with an exact match, "Impressionism" 202 and
+  // 155 because it also finds "Post-Impressionism").
+  addTermsClause(clauses, 'subject_titles.keyword', subjectTerms);
+  addTermsClause(clauses, 'style_titles.keyword', styleTerms);
   clauses.push({ term: { is_public_domain: true } });
   return clauses;
+}
+
+function addTermsClause(clauses, field, values) {
+  if (values.length > 0) clauses.push({ terms: { [field]: values } });
 }
 
 function applyMustClauses(params, clauses) {
@@ -80,14 +87,19 @@ function matchesShapeFilters(item, shapeFilters) {
   return !!thumbnail && shapeFilters.includes(getShapeBand(thumbnail.width / thumbnail.height));
 }
 
-async function fetchRandomArtwork({ artistFilter, regionFilter, categories = [], shapeFilters = ['square', 'rectangular', 'panoramic'] } = {}) {
+async function fetchRandomArtwork({ artistFilter, regionFilter, categories = [], movements = [], shapeFilters = ['square', 'rectangular', 'panoramic'] } = {}) {
   // Each value is picked once per call and reused across all its
   // attempts below - artistFilter/regionFilter may hold several
   // ";"-separated values, but mixing a different one in mid-call would
   // make the page count (and the pages themselves) inconsistent.
   const artist = translateArtist(pickRandom(artistFilter));
   const region = translateRegion(pickRandom(regionFilter));
-  const filters = { artistFilter: artist, regionFilter: region, subjectTerms: termsForSource('aic', categories) };
+  const filters = {
+    artistFilter: artist,
+    regionFilter: region,
+    subjectTerms: termsForSource('aic', categories),
+    styleTerms: styleValues(movements),
+  };
   const totalPages = await fetchTotalPages(filters);
 
   for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {

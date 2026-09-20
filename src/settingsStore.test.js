@@ -55,6 +55,15 @@ test('accepts known categories and an empty list, rejects unknown ones', async (
   await assert.rejects(() => settingsStore.update({ categories: 'landscape' }));
 });
 
+test('movements defaults to none, accepts known movements and an empty list, rejects unknown ones', async () => {
+  assert.deepEqual(settingsStore.getAll().movements, []);
+  const updated = await settingsStore.update({ movements: ['impressionism', 'postImpressionism'] });
+  assert.deepEqual(updated.movements, ['impressionism', 'postImpressionism']);
+  assert.deepEqual((await settingsStore.update({ movements: [] })).movements, []);
+  await assert.rejects(() => settingsStore.update({ movements: ['Impressionism'] }));
+  await assert.rejects(() => settingsStore.update({ movements: ['bogus'] }));
+});
+
 test('rejects a captionMode outside the known set', async () => {
   await assert.rejects(() => settingsStore.update({ captionMode: 'sideways' }));
 });

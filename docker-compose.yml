@@ -18,5 +18,6 @@ services:
       # - CACHE_MAX_AGE_DAYS=30
       # - CACHE_MAX_SIZE_MB=500
       # - CATEGORIES=landscape,portrait
+      # - MOVEMENTS=impressionism,baroque
       # - LOCAL_IMAGES_PATH=/app/local-images
     restart: unless-stopped
