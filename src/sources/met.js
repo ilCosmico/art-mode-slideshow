@@ -4,6 +4,7 @@ const { normalizeArtist } = require('./artistName');
 const { translateArtist, translateRegion } = require('./translations');
 const { termsForSource } = require('./categories');
 const { randomElement } = require('../random');
+const searchCache = require('../searchCache');
 
 const SEARCH_TERMS = [
   'landscape', 'portrait', 'still life', 'flowers', 'mountains',
@@ -46,12 +47,22 @@ function intersectIds(a, b) {
   return a.filter((id) => inB.has(id));
 }
 
-async function searchIds(search) {
+// Each search is remembered for a while, keyed by its exact URL (region,
+// field and query), because a fetch with a subject filter runs one search per
+// tag. A failed search throws before anything is stored, and an empty result
+// is not kept either, so a search that came back empty by mistake is not
+// repeated as empty for hours. The cached lists are shared, callers must
+// not modify them (unionIds and intersectIds build new ones).
+async function searchIds(search, cache = searchCache) {
   const searchUrl = buildSearchUrl(search);
+  const cached = cache.get(searchUrl);
+  if (cached) return cached;
   const searchRes = await fetch(searchUrl, { headers: { 'User-Agent': config.userAgent } });
   if (!searchRes.ok) throw new Error(`Met search failed: ${searchRes.status}`);
   const searchData = await searchRes.json();
-  return searchData.objectIDs || [];
+  const ids = searchData.objectIDs || [];
+  if (ids.length > 0) cache.set(searchUrl, ids);
+  return ids;
 }
 
 // An artist and a subject are both required, so their result sets are
@@ -108,4 +119,4 @@ async function fetchRandomArtwork({ artistFilter, regionFilter, categories = [] 
   throw new Error('Met: no eligible public-domain artwork found after retries');
 }
 
-module.exports = { fetchRandomArtwork, buildSearchUrl, tagQuery, unionIds, intersectIds };
+module.exports = { fetchRandomArtwork, buildSearchUrl, tagQuery, unionIds, intersectIds, searchIds };
