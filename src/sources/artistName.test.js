@@ -31,6 +31,20 @@ test('known real artist names pass through unchanged', () => {
   assert.equal(normalizeArtist('Rembrandt (Rembrandt van Rijn)'), 'Rembrandt (Rembrandt van Rijn)');
 });
 
+test('only the first line is kept: the biography line AIC adds is dropped', () => {
+  // Real AIC artist_display values (verified live): a second line carries
+  // birth and death details, which must not end up in the caption.
+  assert.equal(
+    normalizeArtist('Wassily Kandinsky\nBorn Moscow (formerly Russian Empire, now Russia), 1866; died Neuilly-sur-Seine, France, 1944'),
+    'Wassily Kandinsky',
+  );
+  assert.equal(normalizeArtist('Georges Seurat\r\nFrench, 1859-1891'), 'Georges Seurat');
+});
+
+test('a single-line credit keeps its parenthetical details', () => {
+  assert.equal(normalizeArtist('Georges Seurat (French, 1859-1891)'), 'Georges Seurat (French, 1859-1891)');
+});
+
 test('a real artist whose chosen credit contains "Anonymous" is not stripped', () => {
   // Real AIC catalog entry: Bruce Conner titled a work "Anonymous" - the
   // artist is identified, just not by a straightforward name.

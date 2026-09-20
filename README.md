@@ -47,6 +47,8 @@ Not yet deployed to the home server.
 - Local disk cache of downloaded images plus a small JSON index, so the
   same artwork isn't re-fetched repeatedly and the slideshow keeps
   working temporarily if the museum APIs are unreachable.
+- A source whose image downloads keep failing is skipped for 15 minutes
+  and shown as paused in the status panel, then retried automatically.
 - Environment variables set the defaults on first boot
   (`SLIDE_INTERVAL_MINUTES`, `CROSSFADE_SECONDS`, `IMAGE_SOURCES`,
   `SHAPE_FILTERS`, `CACHE_MAX_AGE_DAYS`, `CACHE_MAX_SIZE_MB`,

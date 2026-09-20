@@ -18,11 +18,15 @@ const UNKNOWN_ARTIST_PHRASES = new Set([
 // that trailing context before matching, so "Artist unknown (American,
 // 18th century)" and "Anonymous, Czech, early 20th century" both resolve
 // to their bare unknown-artist phrase.
+//
+// Only the first line is kept as the name: AIC's artist_display puts a
+// biography on later lines (e.g. "Born Moscow (...), 1866; died
+// Neuilly-sur-Seine, France, 1944"), which doesn't belong in a caption.
 function normalizeArtist(rawArtist) {
   if (!rawArtist) return '';
   const firstLine = rawArtist.split('\n')[0];
   const leadPhrase = firstLine.split(/[,(]/)[0].trim().toLowerCase();
-  return UNKNOWN_ARTIST_PHRASES.has(leadPhrase) ? '' : rawArtist;
+  return UNKNOWN_ARTIST_PHRASES.has(leadPhrase) ? '' : firstLine.trim();
 }
 
 module.exports = { normalizeArtist };

@@ -6,6 +6,7 @@ const cacheCleanup = require('./cacheCleanup');
 const imageDimensions = require('./imageDimensions');
 const settingsStore = require('./settingsStore');
 const statusLog = require('./statusLog');
+const sourceHealth = require('./sourceHealth');
 const aic = require('./sources/aic');
 const met = require('./sources/met');
 const local = require('./sources/local');
@@ -45,14 +46,17 @@ async function getNextArtwork() {
     shapeFilters: settings.shapeFilters,
   };
 
-  const remaining = shuffle(enabledSources);
+  const remaining = shuffle(enabledSources.filter((s) => !sourceHealth.isSidelined(s)));
   let lastError;
   while (remaining.length > 0) {
     const sourceName = remaining.pop();
     for (let attempt = 0; attempt < PER_SOURCE_ATTEMPTS; attempt++) {
+      // A failed download may have just sidelined the source; don't spend
+      // the remaining attempts on it.
+      if (sourceHealth.isSidelined(sourceName)) break;
       try {
         const artwork = await SOURCE_FETCHERS[sourceName](sourceParams);
-        const { response, cached } = await cacheArtwork(artwork, settings);
+        const { response, cached } = await cacheArtwork(artwork, settings, sourceName);
         statusLog.recordSuccess({ source: response.source, title: response.title, cached });
         return response;
       } catch (err) {
@@ -64,7 +68,7 @@ async function getNextArtwork() {
   }
 
   const fallbackEntry = await cacheIndex.getRandomEntry(settings.shapeFilters);
-  if (!fallbackEntry) throw lastError;
+  if (!fallbackEntry) throw lastError || new Error('every enabled source is sidelined and the cache is empty');
   const response = toResponse(fallbackEntry);
   statusLog.recordSuccess({ source: response.source, title: response.title, cached: true });
   return response;
@@ -79,7 +83,33 @@ function shuffle(items) {
   return result;
 }
 
-async function cacheArtwork(artwork, settings) {
+// Only a download that fails counts against the source's health. A
+// download that succeeds but is then rejected (wrong shape) is the
+// filters doing their job, not the source misbehaving.
+async function downloadImage(artwork, sourceName) {
+  try {
+    const response = await fetch(artwork.imageUrl, {
+      headers: { 'User-Agent': config.userAgent, ...artwork.imageHeaders },
+    });
+    if (!response.ok) throw new Error(`image download failed: ${response.status}`);
+    // A bot-check or error page can come back as a 200 HTML document.
+    const contentType = response.headers.get('content-type') || '';
+    if (contentType.startsWith('text/')) throw new Error(`image download failed: got ${contentType}`);
+    const buffer = Buffer.from(await response.arrayBuffer());
+    sourceHealth.recordSuccess(sourceName);
+    return buffer;
+  } catch (err) {
+    if (sourceHealth.recordFailure(sourceName)) {
+      const minutes = Math.round(sourceHealth.COOLDOWN_MS / 60000);
+      const message = `downloads keep failing, skipping this source for ${minutes} minutes`;
+      console.error(`Source "${sourceName}" sidelined: ${message}`);
+      statusLog.recordError(sourceName, message);
+    }
+    throw err;
+  }
+}
+
+async function cacheArtwork(artwork, settings, sourceName) {
   const index = await cacheIndex.loadIndex();
   if (index[artwork.id]) return { response: toResponse(index[artwork.id]), cached: true };
 
@@ -87,9 +117,7 @@ async function cacheArtwork(artwork, settings) {
   const filename = `${artwork.id}${ext}`;
   const destPath = path.join(config.cacheDir, filename);
 
-  const fetchResponse = await fetch(artwork.imageUrl, { headers: { 'User-Agent': config.userAgent } });
-  if (!fetchResponse.ok) throw new Error(`image download failed: ${fetchResponse.status}`);
-  const buffer = Buffer.from(await fetchResponse.arrayBuffer());
+  const buffer = await downloadImage(artwork, sourceName);
 
   // Authoritative orientation check: a source's declared metadata (a
   // physical measurement, a thumbnail size) can disagree with the real

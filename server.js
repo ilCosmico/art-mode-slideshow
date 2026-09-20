@@ -3,6 +3,7 @@ const path = require('path');
 const config = require('./src/config');
 const settingsStore = require('./src/settingsStore');
 const statusLog = require('./src/statusLog');
+const sourceHealth = require('./src/sourceHealth');
 const { getNextArtwork } = require('./src/imageProvider');
 
 const app = express();
@@ -47,7 +48,7 @@ app.post('/api/settings', async (req, res) => {
 });
 
 app.get('/api/status', (req, res) => {
-  res.json(statusLog.getStatus());
+  res.json({ ...statusLog.getStatus(), sidelinedSources: sourceHealth.getSidelined() });
 });
 
 app.get('/api/next', async (req, res) => {
