@@ -1,6 +1,6 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { buildSearchUrl } = require('./aic');
+const { buildSearchUrl, buildImageUrl } = require('./aic');
 
 function queryParams(url) {
   return Object.fromEntries(new URL(url).searchParams.entries());
@@ -53,4 +53,26 @@ test('subject, style and artist clauses all sit in the same query, so all must m
   const clauseIndexes = new Set(Object.keys(params).map((k) => k.match(/\[must\]\[(\d+)\]/)?.[1]).filter(Boolean));
   // painting type, artist, subject, style, public domain
   assert.equal(clauseIndexes.size, 5);
+});
+
+test('an image wider than the maximum is requested at 1686 px, exactly as before', () => {
+  const url = buildImageUrl({ image_id: 'abc-123', thumbnail: { width: 5417, height: 17274 } });
+  assert.equal(url, 'https://www.artic.edu/iiif/2/abc-123/full/1686,/0/default.jpg');
+});
+
+test('an image exactly 1686 px wide is still requested at 1686 px', () => {
+  assert.ok(buildImageUrl({ image_id: 'abc-123', thumbnail: { width: 1686, height: 2250 } }).includes('/full/1686,/'));
+});
+
+test('an image narrower than 1686 px is requested at its own width, never scaled up', () => {
+  // Real AIC records, verified live: these widths are served at the original size.
+  assert.ok(buildImageUrl({ image_id: 'a', thumbnail: { width: 1663, height: 2250 } }).includes('/full/1663,/'));
+  assert.ok(buildImageUrl({ image_id: 'b', thumbnail: { width: 1328, height: 866 } }).includes('/full/1328,/'));
+});
+
+test('the requested width never exceeds the original width', () => {
+  for (const width of [1, 800, 1685, 1686, 1687, 4000]) {
+    const requested = Number(buildImageUrl({ image_id: 'x', thumbnail: { width, height: 100 } }).match(/\/full\/(\d+),\//)[1]);
+    assert.ok(requested <= width && requested <= 1686, `width ${width} requested ${requested}`);
+  }
 });
