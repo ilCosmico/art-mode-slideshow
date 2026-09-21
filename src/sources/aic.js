@@ -24,6 +24,8 @@ const MAX_IMAGE_WIDTH = 1686;
 const AIC_HEADERS = { 'AIC-User-Agent': config.aicUserAgent };
 const REQUEST_HEADERS = { 'User-Agent': config.userAgent, ...AIC_HEADERS };
 
+const SEARCH_URL = 'https://api.artic.edu/api/v1/artworks/search';
+
 // Fixed clauses plus whichever optional filters are set, combined as a
 // single bool/must array (verified live: AIC doesn't care about clause
 // order here, unlike Met's search endpoint - see met.js).
@@ -46,24 +48,26 @@ function addTermsClause(clauses, field, values) {
   if (values.length > 0) clauses.push({ terms: { [field]: values } });
 }
 
-function applyMustClauses(params, clauses) {
-  clauses.forEach((clause, i) => {
-    const [type, fields] = Object.entries(clause)[0];
-    const [field, value] = Object.entries(fields)[0];
-    const prefix = `query[bool][must][${i}][${type}][${field}]`;
-    if (Array.isArray(value)) value.forEach((v, j) => params.set(`${prefix}[${j}]`, v));
-    else params.set(prefix, value);
-  });
+function buildSearchBody(page, filters) {
+  return {
+    fields: ARTWORK_FIELDS,
+    limit: RESULTS_PER_PAGE,
+    page,
+    query: { bool: { must: buildMustClauses(filters) } },
+  };
 }
 
-function buildSearchUrl(page, filters) {
-  const params = new URLSearchParams({
-    fields: ARTWORK_FIELDS,
-    limit: String(RESULTS_PER_PAGE),
-    page: String(page),
-  });
-  applyMustClauses(params, buildMustClauses(filters));
-  return `https://api.artic.edu/api/v1/artworks/search?${params.toString()}`;
+// The search is a POST with the query in the body, not a GET with it spread
+// over the URL: the more subject terms are selected, the longer the URL,
+// and past about 2000 characters AIC answers 403 (verified live: 20 terms
+// pass, 22 fail). A body of 200 terms is accepted and returns the same
+// results and pagination as the equivalent GET.
+function searchRequest(body) {
+  return {
+    method: 'POST',
+    headers: { ...REQUEST_HEADERS, 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  };
 }
 
 // An artist/region filter can shrink the matching set from tens of
@@ -72,10 +76,8 @@ function buildSearchUrl(page, filters) {
 // results the current filters actually have, and only sample within
 // that real range (still capped at MAX_PAGE for the offset limit above).
 async function fetchTotalPages(filters) {
-  const params = new URLSearchParams({ fields: 'id', limit: '1', page: '1' });
-  applyMustClauses(params, buildMustClauses(filters));
-  const url = `https://api.artic.edu/api/v1/artworks/search?${params.toString()}`;
-  const res = await fetch(url, { headers: REQUEST_HEADERS });
+  const body = { ...buildSearchBody(1, filters), fields: 'id', limit: 1 };
+  const res = await fetch(SEARCH_URL, searchRequest(body));
   if (!res.ok) throw new Error(`AIC search failed: ${res.status}`);
   const { pagination } = await res.json();
   const total = pagination?.total || 0;
@@ -118,9 +120,7 @@ async function fetchRandomArtwork({ artistFilter, regionFilter, categories = [],
 
   for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
     const page = 1 + Math.floor(Math.random() * totalPages);
-    const res = await fetch(buildSearchUrl(page, filters), {
-      headers: REQUEST_HEADERS,
-    });
+    const res = await fetch(SEARCH_URL, searchRequest(buildSearchBody(page, filters)));
     if (!res.ok) throw new Error(`AIC search failed: ${res.status}`);
     const { data } = await res.json();
     const candidates = (data || []).filter((item) => item.image_id && matchesShapeFilters(item, shapeFilters));
@@ -140,4 +140,4 @@ async function fetchRandomArtwork({ artistFilter, regionFilter, categories = [],
   throw new Error('AIC: no painting matching the shape filters found after retries');
 }
 
-module.exports = { fetchRandomArtwork, buildSearchUrl, buildImageUrl };
+module.exports = { fetchRandomArtwork, buildSearchBody, buildImageUrl };
