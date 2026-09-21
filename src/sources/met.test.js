@@ -1,6 +1,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { buildSearchUrl, tagQuery, unionIds, intersectIds } = require('./met');
+const { buildSearchUrl, tagQuery, unionIds, intersectIds, searchIds } = require('./met');
+const { createSearchCache } = require('../searchCache');
 
 function paramNames(url) {
   return [...new URL(url).searchParams.keys()];
@@ -48,4 +49,96 @@ test('intersectIds keeps only ids present in both lists', () => {
   assert.deepEqual(intersectIds([1, 2, 3, 4], [4, 2, 9]), [2, 4]);
   assert.deepEqual(intersectIds([1, 2], [3, 4]), []);
   assert.deepEqual(intersectIds([], [1]), []);
+});
+
+// searchIds() with a stubbed fetch and a private cache, so no request leaves
+// the process and each test starts empty.
+function stubFetch(t, responses) {
+  const calls = [];
+  t.mock.method(globalThis, 'fetch', async (url) => {
+    calls.push(url);
+    const next = responses.shift();
+    if (next instanceof Error) throw next;
+    return { ok: next.ok !== false, status: next.status || 200, json: async () => next.body };
+  });
+  return calls;
+}
+
+function privateCache(options = {}) {
+  const clock = { time: 1_000_000 };
+  return { cache: createSearchCache({ ttlMs: 60_000, maxEntries: 10, now: () => clock.time, ...options }), clock };
+}
+
+test('the same search is sent once, then answered from memory', async (t) => {
+  const calls = stubFetch(t, [{ body: { objectIDs: [1, 2, 3] } }]);
+  const { cache } = privateCache();
+  const search = { field: 'tags', query: 'Saints' };
+  assert.deepEqual(await searchIds(search, cache), [1, 2, 3]);
+  assert.deepEqual(await searchIds(search, cache), [1, 2, 3]);
+  assert.deepEqual(await searchIds(search, cache), [1, 2, 3]);
+  assert.equal(calls.length, 1);
+});
+
+test('searches that differ in query, field or region are separate entries', async (t) => {
+  const calls = stubFetch(t, [
+    { body: { objectIDs: [1] } }, { body: { objectIDs: [2] } }, { body: { objectIDs: [3] } }, { body: { objectIDs: [4] } },
+  ]);
+  const { cache } = privateCache();
+  assert.deepEqual(await searchIds({ field: 'tags', query: 'Saints' }, cache), [1]);
+  assert.deepEqual(await searchIds({ field: 'tags', query: 'Christ' }, cache), [2]);
+  assert.deepEqual(await searchIds({ field: 'artistOrCulture', query: 'Saints' }, cache), [3]);
+  assert.deepEqual(await searchIds({ field: 'tags', query: 'Saints', regionFilter: 'Italy' }, cache), [4]);
+  assert.equal(calls.length, 4);
+});
+
+test('a search is sent again once its lifetime is over', async (t) => {
+  const calls = stubFetch(t, [{ body: { objectIDs: [1] } }, { body: { objectIDs: [1, 2] } }]);
+  const { cache, clock } = privateCache();
+  const search = { field: 'tags', query: 'Saints' };
+  await searchIds(search, cache);
+  clock.time += 59_999;
+  assert.deepEqual(await searchIds(search, cache), [1]);
+  clock.time += 1;
+  assert.deepEqual(await searchIds(search, cache), [1, 2]);
+  assert.equal(calls.length, 2);
+});
+
+test('a failed search is not remembered: an error status is retried', async (t) => {
+  const calls = stubFetch(t, [{ ok: false, status: 403 }, { body: { objectIDs: [7] } }]);
+  const { cache } = privateCache();
+  const search = { field: 'tags', query: 'Saints' };
+  await assert.rejects(() => searchIds(search, cache), /Met search failed: 403/);
+  assert.deepEqual(await searchIds(search, cache), [7]);
+  assert.equal(calls.length, 2);
+});
+
+test('a failed search is not remembered: a network error or an unreadable body is retried', async (t) => {
+  const calls = stubFetch(t, [new Error('fetch failed'), { body: null }, { body: { objectIDs: [7] } }]);
+  const { cache } = privateCache();
+  const search = { field: 'tags', query: 'Saints' };
+  await assert.rejects(() => searchIds(search, cache), /fetch failed/);
+  await assert.rejects(() => searchIds(search, cache));
+  assert.deepEqual(await searchIds(search, cache), [7]);
+  assert.equal(calls.length, 3);
+});
+
+test('an empty result is not remembered, so it is searched again next time', async (t) => {
+  const calls = stubFetch(t, [{ body: { total: 0, objectIDs: null } }, { body: { objectIDs: [5] } }]);
+  const { cache } = privateCache();
+  const search = { field: 'tags', query: 'War' };
+  assert.deepEqual(await searchIds(search, cache), []);
+  assert.deepEqual(await searchIds(search, cache), [5]);
+  assert.equal(calls.length, 2);
+});
+
+test('several subject tags cost one search each the first time and none after that', async (t) => {
+  const tags = ['Saints', 'Christ', 'Virgin Mary', 'Madonna', 'Angels', 'Crucifixion', 'Jesus'];
+  const calls = stubFetch(t, tags.map((_, i) => ({ body: { objectIDs: [i, 100 + i] } })));
+  const { cache } = privateCache();
+  for (let fetchNumber = 0; fetchNumber < 5; fetchNumber++) {
+    const perTag = [];
+    for (const tag of tags) perTag.push(await searchIds({ field: 'tags', query: tagQuery(tag) }, cache));
+    assert.equal(unionIds(perTag).length, 14);
+  }
+  assert.equal(calls.length, 7);
 });
