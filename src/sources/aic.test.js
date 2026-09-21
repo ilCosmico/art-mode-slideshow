@@ -1,58 +1,65 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { buildSearchUrl, buildImageUrl } = require('./aic');
+const { buildSearchBody, buildImageUrl } = require('./aic');
 
-function queryParams(url) {
-  return Object.fromEntries(new URL(url).searchParams.entries());
+// The must clauses of the search body, and the terms of the one that matches
+// on a given field (undefined when there is none).
+function clauses(filters) {
+  return buildSearchBody(1, filters).query.bool.must;
+}
+
+function termsOn(filters, field) {
+  return clauses(filters).find((clause) => clause.terms?.[field])?.terms[field];
 }
 
 test('without subject terms there is no subject clause', () => {
-  const params = queryParams(buildSearchUrl(1, { artistFilter: '', regionFilter: '' }));
-  assert.equal(Object.keys(params).some((k) => k.includes('subject_titles')), false);
+  assert.equal(termsOn({ artistFilter: '', regionFilter: '' }, 'subject_titles.keyword'), undefined);
 });
 
 test('subject terms become one exact "terms" clause on the keyword field', () => {
-  const params = queryParams(buildSearchUrl(1, { subjectTerms: ['landscapes', 'landscape'] }));
-  const termsKeys = Object.keys(params).filter((k) => k.includes('[terms][subject_titles.keyword]'));
-  assert.equal(termsKeys.length, 2);
-  assert.deepEqual(termsKeys.map((k) => params[k]).sort(), ['landscape', 'landscapes']);
+  assert.deepEqual(termsOn({ subjectTerms: ['landscapes', 'landscape'] }, 'subject_titles.keyword'), ['landscapes', 'landscape']);
 });
 
-test('a single-value clause keeps its plain key, so artist and region are unchanged', () => {
-  const params = queryParams(buildSearchUrl(1, { artistFilter: 'Monet', regionFilter: 'France', subjectTerms: ['war'] }));
-  assert.equal(params['query[bool][must][1][match][artist_title]'], 'Monet');
-  assert.equal(params['query[bool][must][2][match][place_of_origin]'], 'France');
+test('a single-value clause stays a plain match, so artist and region are unchanged', () => {
+  const must = clauses({ artistFilter: 'Monet', regionFilter: 'France', subjectTerms: ['war'] });
+  assert.deepEqual(must[1], { match: { artist_title: 'Monet' } });
+  assert.deepEqual(must[2], { match: { place_of_origin: 'France' } });
 });
 
 test('the subject clause sits alongside the artist clause, so both must match', () => {
-  const params = queryParams(buildSearchUrl(1, { artistFilter: 'Monet', subjectTerms: ['portraits'] }));
-  const clauseIndexes = new Set(Object.keys(params).map((k) => k.match(/\[must\]\[(\d+)\]/)?.[1]).filter(Boolean));
   // painting type, artist, subject, public domain
-  assert.equal(clauseIndexes.size, 4);
+  assert.equal(clauses({ artistFilter: 'Monet', subjectTerms: ['portraits'] }).length, 4);
 });
 
 test('without style terms there is no style clause', () => {
-  const params = queryParams(buildSearchUrl(1, { subjectTerms: ['war'] }));
-  assert.equal(Object.keys(params).some((k) => k.includes('style_titles')), false);
+  assert.equal(termsOn({ subjectTerms: ['war'] }, 'style_titles.keyword'), undefined);
 });
 
 test('style terms become one exact "terms" clause on style_titles.keyword', () => {
-  const params = queryParams(buildSearchUrl(1, { styleTerms: ['Impressionism', 'Realism'] }));
-  const keys = Object.keys(params).filter((k) => k.includes('[terms][style_titles.keyword]'));
-  assert.equal(keys.length, 2);
-  assert.deepEqual(keys.map((k) => params[k]).sort(), ['Impressionism', 'Realism']);
+  assert.deepEqual(termsOn({ styleTerms: ['Impressionism', 'Realism'] }, 'style_titles.keyword'), ['Impressionism', 'Realism']);
 });
 
 test('a style clause never leaks a text match on the movement: Impressionism does not become a word search', () => {
-  const params = queryParams(buildSearchUrl(1, { styleTerms: ['Impressionism'] }));
-  assert.equal(Object.keys(params).some((k) => k.includes('[match][style_title')), false);
+  const must = clauses({ styleTerms: ['Impressionism'] });
+  assert.equal(must.some((clause) => clause.match && Object.keys(clause.match).some((k) => k.startsWith('style_title'))), false);
 });
 
 test('subject, style and artist clauses all sit in the same query, so all must match', () => {
-  const params = queryParams(buildSearchUrl(1, { artistFilter: 'Monet', subjectTerms: ['landscapes'], styleTerms: ['Impressionism'] }));
-  const clauseIndexes = new Set(Object.keys(params).map((k) => k.match(/\[must\]\[(\d+)\]/)?.[1]).filter(Boolean));
   // painting type, artist, subject, style, public domain
-  assert.equal(clauseIndexes.size, 5);
+  assert.equal(clauses({ artistFilter: 'Monet', subjectTerms: ['landscapes'], styleTerms: ['Impressionism'] }).length, 5);
+});
+
+test('the page, the page size and the fields travel in the body', () => {
+  const body = buildSearchBody(3, {});
+  assert.equal(body.page, 3);
+  assert.equal(body.limit, 100);
+  assert.ok(body.fields.split(',').includes('image_id'));
+});
+
+test('a long list of subject terms stays in the body, out of any URL', () => {
+  // AIC refuses a GET URL past about 2000 characters (22 terms already do).
+  const subjectTerms = Array.from({ length: 200 }, (_, i) => `subject number ${i}`);
+  assert.deepEqual(termsOn({ subjectTerms }, 'subject_titles.keyword'), subjectTerms);
 });
 
 test('an image wider than the maximum is requested at 1686 px, exactly as before', () => {

@@ -47,3 +47,22 @@ test('every listed term is a non-empty string, without stray whitespace', () => 
     }
   }
 });
+
+test('no category lists the same term twice for one source', () => {
+  for (const key of CATEGORY_KEYS) {
+    for (const [source, terms] of Object.entries(CATEGORIES[key])) {
+      assert.equal(new Set(terms).size, terms.length, `${key}/${source}`);
+    }
+  }
+});
+
+test('a Met category lists at most 16 tags, since each one is a search per fetch', () => {
+  for (const key of CATEGORY_KEYS) {
+    assert.ok((CATEGORIES[key].met || []).length <= 16, `${key} has ${CATEGORIES[key].met.length} Met tags`);
+  }
+});
+
+test('the catalog values that carry a capital or a museum typo are kept exactly as stored', () => {
+  assert.ok(termsForSource('aic', ['animals']).includes('Chicken'));
+  assert.ok(termsForSource('aic', ['architecture']).includes('architechture'));
+});
