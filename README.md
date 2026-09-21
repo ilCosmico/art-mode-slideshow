@@ -94,7 +94,7 @@ internal `3000`). Point the Android TV box's kiosk browser at
 `http://<server-ip>:8095`.
 
 For local development without Docker: `npm install && npm start`
-(requires Node 18+ for global `fetch`).
+(requires Node 24+, the version the image and the tests run on).
 
 ## Environment variables
 
